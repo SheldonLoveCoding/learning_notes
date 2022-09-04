@@ -12,6 +12,6 @@
 | `git checkout 'branch_name'` | 切换到branch_name的分支                 |
 | `git log`                    | 查看提交日志，与每次提交对应的hash_code |
 | `git reset --hard hash_code` | 回退到 hash_code 对应的版本             |
-
-
-
+| `git branch -M main`         | 新建main分支 并将主分支改为main            |
+| `git push -u origin main`    | 将文件push到github                     |
+| `git clone HTTP .`           | 将HTTP对应的仓库clone到本地        |
