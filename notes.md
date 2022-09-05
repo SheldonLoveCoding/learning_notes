@@ -20,7 +20,24 @@
 | `git remote -v` | 查看远端列表 |
 | `git push -u Some_Name Branch_Name` | 将Branch_Name的文件push到Some_Name对应的github仓库 |
 | `git clone HTTP .`           | 将HTTP对应的仓库clone到本地        |
-| git ls-files | 查看缓冲区的文件 |
+| `git ls-files`      | 查看缓冲区的文件 |
+
+
+## gitignore的使用
+是使用git管理项目时，存放 `忽略文件规则 `的文档。
+
+`touch .gitignore`  生成gitignore文件。
+
+在.gitingore 文件中，遵循相应的语法，在每一行指定一个忽略规则。常见的忽略规则如下：
+```c++
+1 node_modules    忽略node_modules的单文件 
+2 
+3 *.zip            表示忽略所有 .zip结尾的文件
+4 
+5  /dist          忽略项目根目录下的 dist 文件夹,但不包括子目录下的dist文件夹
+6 
+7  build/          忽略 build/目录下的所有文件，包括子目录下的文件
+```
 
 
 
