@@ -6,6 +6,10 @@
 
 
 
+## 梯度爆炸
+
+
+
 ## 梯度消失
 
 在训练过程中，训练数据的predication与label的误差，梯度反传总是会让后几层的网络结构参数变化较大，训练较快，而前几层的参数更新量很小。
@@ -68,4 +72,80 @@ tensor([[-0.4291, -0.4291, -0.4291,  ..., -0.4291, -0.4291, -0.4291],
 '''
 ```
 
-这是在训练过程中，会对用当前branch的均值和方差做normalization，那么测试的是，就是用训练集整体的均值和方差做normalization。这一点通过pytorch中的 `model.train()` 和 `model.eval()` 来设置。这一操作还会影响dropout（train使用，eval不使用）。
+这是在训练过程中，会对用当前branch的均值和方差做normalization，那么测试的是，就是用训练集整体的均值和方差做normalization。这一点通过pytorch中的 `model.train()` 和 `model.eval()` 来设置。这一操作还会影响dropout（train使用，eval不使用）。使用了BN层，那么就没必要使用dropout了。因为BN层可以被认为是引入随机噪音来减小模型复杂度，因此不用dropout了。
+
+
+
+对于全连接层，BN是作用在特征维上的：对每一个特征都进行BN；对于卷积层，BN是作用在通道维上的：对这一个batch的N个样本的同一个通道的对应像素位置进行BN。
+
+```python
+m = nn.BatchNorm2d(3) #(C)
+input = torch.randn(2, 3, 3, 4) # (N, C, H, W)
+output = m(input)
+print(input)
+print(output)
+```
+
+## Tensorboard+Pytorch操作
+
+- 可以检查一下python环境里的setuptools的版本是不是小于60.0，如果是，恭喜。直接pip install tensorboard==2.0.2即可。如果不是，则不用白费力气了。
+
+- 基本操作
+
+  ```python
+  from torch.utils.tensorboard import SummaryWriter
+  writer = SummaryWriter('./EITNN_train_test_log')
+  
+  writer.add_scalar('Loss/test', test_loss, epoch)
+  writer.flush()
+  ```
+
+- 然后在Pycharm的Terminal的中将目录切换到`EITNN_train_test_log`文件夹的当前级，然后运行
+
+  ```
+  tensorboard --logdir=EITNN_train_test_log
+  ```
+
+- 然后在Chrome上访问链接即可`http://localhost:6006/`
+
+## 常用基础操作
+
+### 判断是否在gpu上
+
+```python
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(device)
+model = EITNet(voltage_num, image_size).to(device)
+print(next(model.parameters()).is_cuda) #true
+print(next(model.parameters()).device) #cuda:0
+```
+
+### Tensor与ndarray的转换
+
+
+
+### 将nan替换为0
+
+```
+train_dataset = torch.where(torch.isnan(train_dataset), torch.full_like(train_dataset, 0), train_dataset)
+```
+
+### pytorch中 Tensor的boolean与int的转换
+
+```python
+mask_label = (~torch.isnan(image_label)).int()
+```
+
+### pytorch中的矩阵运算
+
+```
+ torch.mul (a, b) 是矩阵a和b对应位相乘，a和b的维度必须相等
+ 
+```
+
+### 将矩阵沿着某一维度重复
+
+```python
+mask_label_batch = mask_label.repeat(2, 1, 1, 1)
+```
+
