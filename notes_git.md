@@ -43,6 +43,19 @@
 
 ## 如何查看暂存区的文件？
 
+```
+git ls-files
+```
+
+## 将已经add的文件重新修改会untrack的状态
+
+```c++
+//对某个文件取消追踪
+git rm --cached <filename>  <filename2>  <filename3>
+//对全部文件取消追踪
+git rm -r --cached . 　　//不删除本地文件
+```
+
 
 
 ## add / commit / push的区别？push的是哪些文件？
