@@ -20,7 +20,7 @@
 | `git remote -v` | 查看远端列表 |
 | `git push -u Some_Name Branch_Name` | 将Branch_Name的文件push到Some_Name对应的github仓库 |
 | `git clone HTTP .`           | 将HTTP对应的仓库clone到本地        |
-| `git ls-files`      | 查看缓冲区的文件 |
+| `git ls-files`      | 查看暂存区（git add 之后）的文件 |
 
 
 ## gitignore的使用
@@ -34,18 +34,13 @@
 2 
 3 *.zip            表示忽略所有 .zip结尾的文件
 4 
-5  /dist          忽略项目根目录下的 dist 文件夹,但不包括子目录下的dist文件夹
+5  /dist          忽略项目根目录下的 dist 文件夹,但不包括子目录下的dist文件夹；注意前面不要加 ./dist, 否则识别不了
 6 
 7  build/          忽略 build/目录下的所有文件，包括子目录下的文件
+    
 ```
 
 
-
-## 如何查看暂存区的文件？
-
-```
-git ls-files
-```
 
 ## 将已经add的文件重新修改会untrack的状态
 
@@ -56,7 +51,30 @@ git rm --cached <filename>  <filename2>  <filename3>
 git rm -r --cached . 　　//不删除本地文件
 ```
 
+## 撤销commit
 
+```
+https://www.jianshu.com/p/491a14d414f6
+git reset --soft HEAD^  #撤销上次的commit，不更改工作区的代码
+git reset --hard 提交id  #回到那一次的commit，更改代码
+```
+
+## 更新gitignore的话需要：
+
+首先要把之前已经track的文件利用`git rm --cached`命令取消跟踪。
+
+然后更新gitignore，保存。
+
+然后再`git add .`就可以了
 
 ## add / commit / push的区别？push的是哪些文件？
 
+commit多次的话，push是要全部push上去的。
+
+
+
+## 遇到网络问题，方法？
+
+挂梯子，修改代理。
+
+修改DNS（不太好用）
