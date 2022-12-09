@@ -77,4 +77,11 @@ commit多次的话，push是要全部push上去的。
 
 挂梯子，修改代理。
 
+查看代理(本电脑的代理是  127.0.0.1:7890)
+
+```
+git config --global --get http.proxy
+git config --global --get https.proxy
+```
+
 修改DNS（不太好用）

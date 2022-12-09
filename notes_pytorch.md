@@ -110,6 +110,17 @@ print(output)
 
 运行上面的命令会把文件夹下所有的event文件都运行，所以还是尽量每一次运行都新建一个文件夹存储event文件最好。
 
+## 训练的时候没有爆显存，测试的时候显存爆炸。
+
+原因就是在训练过程中会有一步清空梯度的操作，然而在测试的时候并没有，所以梯度会累加，然后显存就爆炸。解决办法：
+
+```python
+for epoch in range(epochs):
+    train(epoch)
+    with torch.no_grad():
+        test(epoch)
+```
+
 
 
 ## 常用基础操作
