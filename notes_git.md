@@ -87,3 +87,14 @@ git config --global --get https.proxy
 修改DNS（不太好用）
 
 ## github的仓库clone到本地后，可以修改仓库文件夹名称吗？
+
+可以
+
+## git 将远程分支同步到本地？
+
+```
+git remote -v
+git fetch REMOTENAME BRANCHNAME
+git log BRANCHNAME.. REMOTENAME/BRANCHNAME
+git merge REMOTENAME/BRANCHNAME
+```
