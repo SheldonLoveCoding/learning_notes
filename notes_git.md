@@ -85,3 +85,5 @@ git config --global --get https.proxy
 ```
 
 修改DNS（不太好用）
+
+## github的仓库clone到本地后，可以修改仓库文件夹名称吗？
