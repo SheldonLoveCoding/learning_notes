@@ -139,7 +139,7 @@ public:
 
 | 函数                                                       | 用法                                                         |
 | ---------------------------------------------------------- | ------------------------------------------------------------ |
-| `string& insert (size_t pos, const string& str);`          | 插入字符串。pos 表示要插入的位置，也就是下标；str 表示要插入的字符串，它可以是 string 字符串，也可以是C风格的字符串。 |
+| `string& insert (size_t pos, const string& str);`          | 插入字符串。pos 表示要插入的位置，也就是下标，是标量；str 表示要插入的字符串，它可以是 string 字符串，也可以是C风格的字符串。 |
 | `string& erase (size_t pos = 0, size_t len = npos);`       | 删除字符串某元素。pos 表示要删除的子字符串的起始下标，len 表示要删除子字符串的长度。如果不指明 len 的话，那么直接删除从 pos 到字符串结束处的所有字符（此时 len = str.length - pos） |
 | `string substr (size_t pos = 0, size_t len = npos) const;` | 提取子字符串。pos 为要提取的子字符串的起始下标，len 为要提取的子字符串的长度。 |
 
@@ -607,6 +607,334 @@ public:
             }
         }
         return res;
+    }
+};
+```
+
+# 栈与队列（stack & queue）
+
+## 基础知识
+
+1. C++中stack 是容器么？
+
+   并不是，C++的STL中提供了七种容器。分别是三个序列式容器：向量（vector）、双端队列（deque）、列表（list），此外你也可以把 string 和 array 当做一种序列式容器。四个关联式容器：集合（set）、多重集合（multiset）、映射（map）和多重映射（multimap）。所以STL中栈往往不被归类为容器，而被归类为container adapter（容器适配器）。
+
+2. 我们使用的stack是属于哪个版本的STL？
+
+3. 我们使用的STL中stack是如何实现的？
+
+   栈的内部结构，栈的底层实现可以是vector，deque，list 都是可以的， 主要就是数组和链表的底层实现。stack和queue都是默认使用deque来实现的。
+
+4. stack 提供迭代器来遍历stack空间么？
+
+   不提供，栈提供push 和 pop 等等接口，所有元素必须符合先进后出规则，**所以栈不提供走访功能，也不提供迭代器(iterator)**。 不像是set 或者map 提供迭代器iterator来遍历所有元素。队列也不允许有便利行为，不提供迭代器。
+
+   栈是先进后出，队列是先进先出，但并不是两端队列。
+
+5. 基础用法
+
+   | stack的函数 | 用法                     |
+   | ----------- | ------------------------ |
+   | push()      | 入栈                     |
+   | pop()       | 弹出栈顶；但是不返回数值 |
+   | top()       | 返回栈顶数值；但是不弹出 |
+   | empty()     | 判断是否为空             |
+
+   | queue的函数 | 用法         |
+   | ----------- | ------------ |
+   | push()      | 入队列       |
+   | pop()       | 出队列       |
+   | front()     | 返回队列头   |
+   | back()      | 返回队列尾   |
+   | empty()     | 判断是否为空 |
+   | size()      | 返回大小     |
+
+## 例题 [有效括号](https://leetcode.cn/problems/valid-parentheses/description/)
+
+解题思路：用栈是肯定的，那么为了方便匹配的判断，采用一个哈希表，用反括号作为key，用正括号作为value。然后遍历字符串，在没有遇到反括号时，就将遇到的正括号入栈；遇到反括号之后就依次弹出栈并判断是否栈顶元素是反括号对应的正括号，不满足则返回false，满足则正常出栈。最后判断栈是否为空，完全匹配则栈为空，否则不为空。
+
+```c++
+class Solution {
+public:
+    bool isValid(string s) {
+        unordered_map<char,char> umap;
+        umap.insert(pair<char,char>(')','('));
+        umap.insert(pair<char,char>(']','['));
+        umap.insert(pair<char,char>('}','{'));
+
+        stack<char> S; 
+        for(char ch:s){
+            if(umap.count(ch)){
+                if(S.empty() || S.top() != umap[ch]){
+                    return false;
+                }
+                else{
+                    S.pop();
+                }
+            }
+            else{
+                S.push(ch);
+            }
+        }
+        return S.empty();
+
+    }
+};
+```
+
+## 例题 [删除字符串中的所有相邻重复项](https://leetcode.cn/problems/remove-all-adjacent-duplicates-in-string/description/)
+
+```c++
+class Solution {
+public:
+    string removeDuplicates(string s) {
+        stack<char> S;
+
+        for(char ch:s){            
+            if(S.size() >= 1 && S.top() == ch){
+                S.pop();
+            }else{
+                S.push(ch);
+            }            
+        }
+
+        string res;
+        while(!S.empty()){
+            res += S.top();
+            S.pop();
+        }
+
+        reverse(res.begin(), res.end());
+        return res;
+
+    }
+};
+```
+
+## 例题 [滑动窗口最大值](https://leetcode.cn/problems/sliding-window-maximum/) （单调队列）
+
+这里需要自己实现一种单调队列。
+
+```c++
+class MyQueue{ // 这是一个单调队列
+public:
+    deque<int> que;
+    void pop(int x_front){
+        if(!que.empty() && x_front == que.front()){
+            que.pop_front();
+        }
+    }
+    void push(int x){
+    // push进来的新元素如果比之前队列的back，那就一股脑把之前的元素都从back端pop掉
+        // 注意不是从front进行pop
+        while(!que.empty() && que.back() < x){
+            que.pop_back();
+        }        
+        que.push_back(x);
+    }
+    int getmaxvalue(){
+    // 要维护队列内的最大值一直在front位置
+        return que.front();
+    }
+};
+```
+
+全部代码
+
+```c++
+
+class Solution {
+private:
+class MyQueue{ // 这是一个单调队列
+public:
+    deque<int> que;
+    void pop(int x_front){
+        if(!que.empty() && x_front == que.front()){
+            que.pop_front();
+        }
+    }
+    void push(int x){
+    // push进来的新元素如果比之前队列的back，那就一股脑把之前的元素都从back端pop掉
+        while(!que.empty() && que.back() < x){
+            que.pop_back();
+        }        
+        que.push_back(x);
+    }
+    int getmaxvalue(){
+    // 要维护队列内的最大值一直在front位置
+        return que.front();
+    }
+};
+
+public:
+    vector<int> maxSlidingWindow(vector<int>& nums, int k) {
+        MyQueue que;
+        vector<int> res;
+        for(int i = 0; i < k;i++){
+            que.push(nums[i]);
+        }
+        res.push_back(que.getmaxvalue());
+        for(int i = k; i < nums.size(); i++){
+            que.pop(nums[i-k]);
+            que.push(nums[i]);
+            res.push_back(que.getmaxvalue());
+        }
+        
+        return res;
+
+    }
+};
+```
+
+## 例题 [前 K 个高频元素](https://leetcode.cn/problems/top-k-frequent-elements/) （优先级队列，大顶堆小顶堆）
+
+大顶堆：父亲总是要比孩子大；小顶堆：父亲总是要比孩子小。该类数据结构很适合在一个大数据集中寻找前k个高频/低频的元素。
+
+C++中的优先级队列即为堆的数据结构。
+
+```c++
+class Solution {
+public:
+    class myComparison{
+    public:
+        bool operator()(const pair<int, int>& lhs, const pair<int, int>& rhs) {
+            return lhs.second > rhs.second;
+        }
+    };
+
+    vector<int> topKFrequent(vector<int>& nums, int k) {
+        unordered_map<int,int> umap;
+        for(auto num:nums){
+            umap[num]++;
+        }
+        
+        priority_queue<pair<int,int>, vector<pair<int,int>>, myComparison> pri_que;
+
+        for(unordered_map<int,int>::iterator it = umap.begin(); it != umap.end(); it++){
+            pri_que.push(*it);
+            if(pri_que.size() > k){
+                pri_que.pop();
+            }
+        }
+        vector<int> res;
+        for(int i = k-1; i >= 0;i--){
+            res.push_back(pri_que.top().first);
+            pri_que.pop();
+        }
+        return res;
+
+    }
+};
+```
+
+
+
+### 填坑：C++中的优先级队列priority_queue的应用与原理
+
+**优先级队列其实是一个堆，堆就是一棵完全二叉树，同时保证父子节点的顺序关系。**
+
+
+
+
+
+# 二叉树
+
+## 基础知识
+
+### 二叉树的分类
+
+满二叉树：二叉树中的每个结点的度为0或者2，并且度为0的结点在同一层上，则为满二叉树。也可以说深度为k，有2^k-1个节点的二叉树。
+
+完全二叉树：在完全二叉树中，除了最底层节点可能没填满外，其余每层节点数都达到最大值，*并且最下面一层的节点都集中在**该层最左边的**若干位置。*若最底层为第 h 层，则该层包含 1~ 2^(h-1)  个节点。
+
+二叉搜索树(BST)：若左子树不为空，则**左子树上所有节点均小于根节点**；若右子树不为空，则右子树上所有节点均大于根节点；
+
+平衡二叉搜索树：又被称为AVL（Adelson-Velsky and Landis）树，且具有以下性质：它是**一棵空树**或它的**左右两个子树的高度差的绝对值不超过1**，**并且左右两个子树都是一棵平衡二叉树**。
+
+### 二叉树的存储
+
+链式存储：每一个节点存储节点值、左指针、右指针。
+
+```c++
+struct TreeNode{
+	int val;
+    TreeNode* left;
+    TreeNode* right;
+    TreeNode(int x): val(x), left(NULL), right(NULL) {};
+}
+```
+
+顺序存储：用数组存储二叉树的节点的值（层序遍历的顺序），如果父节点的下标为 i，则左孩子的下标为 `2i+1`，右孩子的下标为`2i+2`。
+
+### 二叉树的遍历
+
+遍历二叉树节点的过程中，每一次打印节点都是将其作为中间节点（父节点）打印的。就是说根据下面遍历的顺序，在中的位置打印节点。
+
+前序遍历：中左右
+
+```c++
+class Solution {
+public:
+    void preorderTraversal(TreeNode* cur, vector<int> & result){
+        if(cur == NULL){
+            return;
+        }
+        result.push_back(cur->val);
+        preorderTraversal(cur->left, result);
+        preorderTraversal(cur->right, result);
+        
+    }
+    
+    vector<int> Traversal(TreeNode* root) {
+        vector<int> result;
+        preorderTraversal(root, result);
+        return result;
+    }
+};
+```
+
+中序遍历：左中右
+
+```c++
+class Solution {
+public:
+    void midorderTraversal(TreeNode* cur, vector<int> & result){
+        if(cur == NULL){
+            return;
+        }
+        preorderTraversal(cur->left, result);
+        result.push_back(cur->val);        
+        preorderTraversal(cur->right, result);
+        
+    }
+    
+    vector<int> Traversal(TreeNode* root) {
+        vector<int> result;
+        midorderTraversal(root, result);
+        return result;
+    }
+};
+```
+
+后序遍历：左右中
+
+```c++
+class Solution {
+public:
+    void postorderTraversal(TreeNode* cur, vector<int> & result){
+        if(cur == NULL){
+            return;
+        }
+        preorderTraversal(cur->left, result);   
+        preorderTraversal(cur->right, result);
+        result.push_back(cur->val);     
+        
+    }
+    
+    vector<int> Traversal(TreeNode* root) {
+        vector<int> result;
+        postorderTraversal(root, result);
+        return result;
     }
 };
 ```
