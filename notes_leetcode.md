@@ -181,11 +181,11 @@ KMP算法是用来解决 `判断字符串a中是否存在字符串b`的方法。
    }
    ```
 
-3. 处理 b[j] == b[i] 的情况，并给next[i]赋值。
+3. 处理 `b[j] == b[i] `的情况，并给next[i]赋值。
 
    跳出步骤2的循环之后，
 
-   要么就是b[j] == b[i]，**这里我们把视角移到对于i的这一层循环上**，我们想，经历了步骤2中的while循环，那么在上一轮对i的循环时（i-1的时候），这个j要么是0，要么是落在j-1的位置上，并且b[j-1] == b[i-1]。这里就有一点动态规划的意思了，因为可以保证在当前循环中，要么 i 的前一位和 j 的前一位是相等的，要么 j==0，所以当b[i]==b[j]的时候，我们直接j++即可找到 最大前缀和后缀完全相等的位数，后面赋值next[i]=j。
+   要么就是`b[j] == b[i]`，**这里我们把视角移到对于i的这一层循环上**，我们想，经历了步骤2中的while循环，那么在上一轮对i的循环时（i-1的时候），这个j要么是0，要么是落在j-1的位置上，并且`b[j-1] == b[i-1]`。这里就有一点动态规划的意思了，因为可以保证在当前循环中，要么 i 的前一位和 j 的前一位是相等的，要么 `j==0`，所以当`b[i]==b[j]`的时候，我们直接j++即可找到 最大前缀和后缀完全相等的位数，后面赋值next[i]=j。
 
    要么就是 j==0：b[j] == b[i]时，和前文描述一样，j++然后赋值；b[j] != b[i]时这就说明前后缀没有完全相同的，就给next[i]=0，也同样是next[i]=j。
 
@@ -611,6 +611,36 @@ public:
 };
 ```
 
+### 例题8 [无重复字符的最长子串](https://leetcode.cn/problems/longest-substring-without-repeating-characters/description/)
+
+利用unordered_set定义一个队列，left指针指向队列头，如果遇到重复字符（利用.find函数来判断），则重复删除队列头，直到不存在重复字符。
+
+```c++
+class Solution {
+public:
+    int lengthOfLongestSubstring(string s) {
+        unordered_set<int> window;
+        if(s.size() == 0){
+            return 0;
+        }
+        int left = 0;
+        window.insert(s[left]);
+        int maxLen = 1;
+        for(int i = 1;i < s.size();i++){            
+            while(window.find(s[i]) != window.end()){
+                window.erase(s[left]);
+                left++;
+            }
+            window.insert(s[i]);
+            maxLen = max(maxLen, i-left+1);
+        }
+        return maxLen;
+    }
+};
+```
+
+
+
 # 栈与队列（stack & queue）
 
 ## 基础知识
@@ -627,7 +657,7 @@ public:
 
 4. stack 提供迭代器来遍历stack空间么？
 
-   不提供，栈提供push 和 pop 等等接口，所有元素必须符合先进后出规则，**所以栈不提供走访功能，也不提供迭代器(iterator)**。 不像是set 或者map 提供迭代器iterator来遍历所有元素。队列也不允许有便利行为，不提供迭代器。
+   不提供，栈提供push 和 pop 等等接口，所有元素必须符合先进后出规则，**所以栈不提供走访功能，也不提供迭代器(iterator)**。 不像是set 或者map 提供迭代器iterator来遍历所有元素。队列也不允许有遍历行为，不提供迭代器。
 
    栈是先进后出，队列是先进先出，但并不是两端队列。
 
@@ -902,9 +932,9 @@ public:
         if(cur == NULL){
             return;
         }
-        preorderTraversal(cur->left, result);
+        midorderTraversal(cur->left, result);
         result.push_back(cur->val);        
-        preorderTraversal(cur->right, result);
+        midorderTraversal(cur->right, result);
         
     }
     
@@ -925,8 +955,8 @@ public:
         if(cur == NULL){
             return;
         }
-        preorderTraversal(cur->left, result);   
-        preorderTraversal(cur->right, result);
+        postorderTraversal(cur->left, result);   
+        postorderTraversal(cur->right, result);
         result.push_back(cur->val);     
         
     }
@@ -935,6 +965,2446 @@ public:
         vector<int> result;
         postorderTraversal(root, result);
         return result;
+    }
+};
+```
+
+二叉树的层序遍历
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+        queue<TreeNode*> que;
+        vector<vector<int>> res;
+        if(root == nullptr){
+            return res;
+        }
+
+        que.push(root);
+        while(!que.empty()){
+            vector<int> level;
+            int size = que.size(); //每一层的节点个数
+            for(int i = 0;i < size;i++){
+                TreeNode* node = que.front();
+                level.push_back(node->val);
+                que.pop();
+                if(node->left) que.push(node->left);
+                if(node->right) que.push(node->right);
+            }
+            res.push_back(level);
+        }
+        return res;
+    }
+};
+```
+
+- [x] 102.[二叉树的层序遍历](https://leetcode.cn/problems/binary-tree-level-order-traversal/)
+- [x] 107.[二叉树的层次遍历II](https://leetcode.cn/problems/binary-tree-level-order-traversal-ii/)
+- [x] 199.[二叉树的右视图](https://leetcode.cn/problems/binary-tree-right-side-view/)
+- [x] 637.[二叉树的层平均值](https://leetcode.cn/problems/average-of-levels-in-binary-tree/)
+- [x] 429.[N叉树的层序遍历](https://leetcode.cn/problems/n-ary-tree-level-order-traversal/)
+- [x] 515.[在每个树行中找最大值](https://leetcode.cn/problems/find-largest-value-in-each-tree-row/)
+- [x] 116.[填充每个节点的下一个右侧节点指针](https://leetcode.cn/problems/populating-next-right-pointers-in-each-node/)
+- [x] 117.[填充每个节点的下一个右侧节点指针II](https://leetcode.cn/problems/populating-next-right-pointers-in-each-node-ii/)
+- [x] 104.[二叉树的最大深度](https://leetcode.cn/problems/maximum-depth-of-binary-tree/description/)
+- [x] 111.[二叉树的最小深度](https://leetcode.cn/problems/minimum-depth-of-binary-tree/description/) （只需要多判断一步是不是叶子节点，如果是的话直接return即可）
+
+## 二叉树的深度/高度
+
+二叉树的深度是从根节点到该节点的最长简单路径上的节点数目或边的条数。
+
+二叉树的高度是从该节点到叶子节点的最长简单路径上的节点数目或边的条数。
+
+求二叉树的最大深度，我们可以用层序遍历的方法来进行depth++，这是迭代的方法
+
+```c++
+class Solution {
+public:
+    int maxDepth(TreeNode* root) {
+        queue<TreeNode*> que;
+        if(root == nullptr){
+            return 0;
+        }
+        int depth = 0;
+        que.push(root);
+        while(!que.empty()){
+            int size = que.size();
+            depth++;
+            for(int i = 0;i < size;i++){
+                TreeNode* node = que.front();
+                que.pop();
+                if(node->left) que.push(node->left);
+                if(node->right) que.push(node->right);
+            }
+        }
+        return depth;
+    }
+};
+```
+
+也可以用递归的方法计算最大深度（后序遍历）
+
+```c++
+class Solution {
+public:
+    int travel(TreeNode* root){
+        if(root == nullptr){
+            return 0;
+        }
+        int leftDepth = travel(root->left);
+        int rightDepth = travel(root->right);
+        return 1+max(leftDepth, rightDepth);
+    }
+    int maxDepth(TreeNode* root) {
+        if(root == nullptr){
+            return 0;
+        }
+        
+        return travel(root);
+        
+    }
+};
+```
+
+二叉树的最小深度呢？**根节点到叶子节点**的最短简单路径上的节点数目或边的条数。
+
+我们可以层序遍历，在找到第一个叶子结点的时候返回深度。
+
+```c++
+class Solution {
+public:
+    int minDepth(TreeNode* root) {
+        queue<TreeNode*> que;
+        if(root == nullptr){
+            return 0;
+        }
+        int depth = 0;
+        que.push(root);
+        while(!que.empty()){
+            int size = que.size();
+            depth++;
+            for(int i = 0;i < size;i++){
+                TreeNode* node = que.front();
+                que.pop();
+                if(node->left) que.push(node->left);
+                if(node->right) que.push(node->right);
+                if(node->left == nullptr && node->right == nullptr){
+                    return depth;
+                }
+            }
+        }
+        return depth;
+    }
+};
+```
+
+也可以利用递归，但是需要注意的是，并不是简单的` 1+min(leftDepth, rightDepth)`，需要考虑到的是，当节点 N 只有一侧有孩子时，并不能直接` 1+min(leftDepth, rightDepth)`，这时这个 节点 N 并不是最小深度的叶子节点。所以代码如下：
+
+```c++
+class Solution {
+public:
+    int getDepth(TreeNode* node) {
+        if (node == NULL) return 0;
+        int leftDepth = getDepth(node->left);           // 左
+        int rightDepth = getDepth(node->right);         // 右
+                                                        // 中
+        // 当一个左子树为空，右不为空，这时并不是最低点
+        if (node->left == NULL && node->right != NULL) { 
+            return 1 + rightDepth;
+        }   
+        // 当一个右子树为空，左不为空，这时并不是最低点
+        if (node->left != NULL && node->right == NULL) { 
+            return 1 + leftDepth;
+        }
+        int result = 1 + min(leftDepth, rightDepth);
+        return result;
+    }
+
+    int minDepth(TreeNode* root) {
+        return getDepth(root);
+    }
+};
+```
+
+
+
+## 完全二叉树的节点个数
+
+当然可以通过层序遍历或者后序遍历的方式去计算二叉树的节点个数，但是考虑到完全二叉树的特殊性质（除了最底层节点可能没填满外，其余每层节点数都达到最大值，*并且最下面一层的节点都集中在**该层最左边的**若干位置*）我们可以进一步优化。
+
+```c++
+class Solution {
+public:
+    // 确定返回量和传入参数
+    int travel(TreeNode* cur){
+        // 确定递归的终止条件
+        if(cur == nullptr){
+            return 0;
+        }
+        int leftDepth = 1, rightDepth = 1;
+        TreeNode* left = cur->left;
+        TreeNode* right = cur->right;
+        // 计算靠左靠右遍历的树深度，判断是不是满二叉树
+        while(left){
+            left = left->left;
+            leftDepth++;
+        }
+        while(right){
+            right = right->right;
+            rightDepth++;
+        }
+        
+        if(leftDepth == rightDepth){
+            cout << cur->val << ' ' << leftDepth << ' ' << rightDepth << endl;
+            // 返回的是这个子树的节点，所以指数部分不是(leftDepth)
+            return (2 << (leftDepth-1)) - 1;
+        }
+        // 单层的递归逻辑
+        int leftCount = travel(cur->left);
+        int rightCount = travel(cur->right);
+        return 1+leftCount+rightCount;
+    }
+    
+    int countNodes(TreeNode* root) {
+		if(root == nullptr){
+            return 0;
+        }
+        return travel(root);
+    }
+};
+```
+
+## 平衡二叉树 （双递归）
+
+判断平衡二叉树，我这里自己写的双递归的解法，虽然AC但是运行效率较低。
+
+```c++
+class Solution {
+public:
+    int getHeight(TreeNode* cur){
+        if(cur == nullptr){
+            return 0;
+        }
+
+        int leftHeight = getHeight(cur->left);
+        int rightHeight = getHeight(cur->right);
+        return 1+max(leftHeight,rightHeight);
+    }
+    bool isBalancedFunction(TreeNode* cur){
+        if(cur == nullptr){
+            return true;
+        }
+
+        int leftHeight = getHeight(cur->left);        
+        int rightHeight = getHeight(cur->right);
+        bool leftflag = isBalancedFunction(cur->left);
+        bool rightflag = isBalancedFunction(cur->right);
+        return abs(leftHeight-rightHeight) <= 1 && leftflag && rightflag;
+        
+    }
+
+    bool isBalanced(TreeNode* root) {
+        return isBalancedFunction(root);
+
+    }
+};
+```
+
+将两个递归联合在一起，用-1作为一个标志位，运行效率有所提高。
+
+```c++
+class Solution {
+public:
+    int getHeight(TreeNode* cur){
+        if(cur == nullptr){
+            return 0;
+        }
+
+        int leftHeight = getHeight(cur->left);
+        if(leftHeight == -1) return -1;
+        int rightHeight = getHeight(cur->right);
+        if(rightHeight == -1) return -1;
+
+        if(abs(leftHeight-rightHeight)>1){
+            return -1;
+        }
+        else{
+            return 1+max(leftHeight,rightHeight);
+        }
+        
+    }
+
+    bool isBalanced(TreeNode* root) {
+        return getHeight(root) == -1 ? false : true ;
+
+    }
+};
+```
+
+## 二叉树的所有路径 （回溯+递归）
+
+```c++
+class Solution {
+public:
+//前序遍历
+    void dfs(TreeNode* cur, vector<int>& path, vector<string>& res){
+        path.push_back(cur->val);
+
+        if(cur->left == nullptr && cur->right == nullptr){
+            string sPath;
+            for(int i = 0; i < path.size() - 1; i++){
+                sPath += to_string(path[i]);
+                sPath += "->";
+            }
+            sPath += to_string(path[path.size() - 1]);
+            res.push_back(sPath);
+        }
+        
+        if(cur->left){            
+            dfs(cur->left, path, res);
+            path.pop_back();
+        }
+        if(cur->right){
+            dfs(cur->right, path, res);
+            path.pop_back();
+        }
+    }
+    vector<string> binaryTreePaths(TreeNode* root) {
+        vector<string> res;
+        vector<int> path;
+        if(root == nullptr){
+            return res;
+        }
+        dfs(root, path, res);
+        return res;
+    }
+};
+```
+
+## 左叶子之和
+
+```c++
+class Solution {
+public:
+// 先收集左叶子
+    void travel(TreeNode* cur, vector<int>& leftLeaves){
+        if(cur == nullptr){
+            return;
+        }
+
+        travel(cur->left, leftLeaves);
+        travel(cur->right, leftLeaves);
+        if(cur->left != nullptr && cur->left->left == nullptr && cur->left->right == nullptr){
+            leftLeaves.push_back(cur->left->val);
+        }
+
+    }
+    int sumOfLeftLeaves(TreeNode* root) {
+        vector<int> leftLeaves;
+        int sum = 0;
+        if(root == nullptr){
+            return 0;
+        }
+        travel(root, leftLeaves);
+        for(auto val:leftLeaves){
+            sum += val;
+        }
+        return sum;
+    }
+};
+
+#############进一步优化###################
+class Solution {
+public:
+    //用一个变量直接去求和
+    void travel(TreeNode* cur, int* sum){
+        if(cur == nullptr){
+            return;
+        }
+
+        travel(cur->left, sum);
+        travel(cur->right, sum);
+        if(cur->left != nullptr && cur->left->left == nullptr && cur->left->right == nullptr){
+            *sum += cur->left->val;
+        }
+
+    }
+    int sumOfLeftLeaves(TreeNode* root) {
+        vector<int> leftLeaves;
+        int sum = 0;
+        if(root == nullptr){
+            return 0;
+        }
+        travel(root, &sum);
+       
+        return sum;
+    }
+};
+```
+
+## [找树左下角的值](https://leetcode.cn/problems/find-bottom-left-tree-value/)
+
+层序遍历找到左视图，然后返回左视图的最后一个元素。
+
+vector中的pop_back()只是删除最后一个元素，并没有返回值。
+
+```c++
+class Solution {
+public:
+    int findBottomLeftValue(TreeNode* root) {
+        queue<TreeNode*> que;
+        
+        que.push(root);
+        vector<int> leftValue;
+        while(!que.empty()){
+            int size = que.size();
+            for(int i = 0;i < size;i++){
+                TreeNode* node = que.front();
+                que.pop();
+                if(node->left) que.push(node->left);
+                if(node->right) que.push(node->right);
+                if(i == 0){
+                    leftValue.push_back(node->val);
+                }
+            }
+        }
+        return leftValue[leftValue.size() - 1];
+    }
+};
+```
+
+## [路径总和](https://leetcode.cn/problems/path-sum/)
+
+```c++
+class Solution {
+public:
+    int sumVector(vector<int> path){
+        int summ = 0;
+        for(auto p:path){
+            summ += p;
+        }
+        return summ;
+    }
+    void dfs(TreeNode* cur, vector<int>& path, vector<int>& pathSum){
+        path.push_back(cur->val);
+        if(cur->left == nullptr && cur->right == nullptr){ //
+            //cout <<  sumVector(path) << endl;
+            pathSum.push_back(sumVector(path));
+            return;
+        }
+        
+      
+        if(cur->left){
+            dfs(cur->left, path, pathSum);
+            path.pop_back();
+        }
+        if(cur->right){
+            dfs(cur->right, path, pathSum);
+            path.pop_back();
+        }
+
+        
+
+    }
+
+    bool hasPathSum(TreeNode* root, int targetSum) {
+        vector<int> path;
+        vector<int> pathSum;
+        if(root == nullptr){
+            return false;
+        }
+        dfs(root, path, pathSum);
+       
+        bool res = find(pathSum.begin(), pathSum.end(), targetSum) != pathSum.end() ? true:false;
+        return res;
+    }
+};
+```
+
+## [路径总和 II](https://leetcode.cn/problems/path-sum-ii/)
+
+```c++
+class Solution {
+public:
+    int sumVector(vector<int> path){
+        int summ = 0;
+        for(auto p:path){
+            summ += p;
+        }
+        return summ;
+    }
+    void dfs(TreeNode* cur, vector<vector<int>>& pathSet, vector<int>& path){
+        path.push_back(cur->val);
+        if(cur->left == nullptr && cur->right == nullptr){
+            pathSet.push_back(path);
+            return;
+        }
+
+        if(cur->left){
+            dfs(cur->left, pathSet, path);
+            path.pop_back();
+        }
+        if(cur->right){
+            dfs(cur->right, pathSet, path);
+            path.pop_back();
+        }
+    }
+    vector<vector<int>> pathSum(TreeNode* root, int targetSum) {
+        vector<vector<int>> pathSet;
+        vector<int> path;
+        vector<vector<int>> res;
+        if(root == nullptr){
+            return res;
+        }
+        dfs(root, pathSet, path);
+        for(auto p:pathSet){
+            if(sumVector(p) == targetSum){
+                res.push_back(p);
+            }
+        }
+        return res;
+
+    }
+};
+```
+
+## [从中序与后序遍历序列构造二叉树](https://leetcode.cn/problems/construct-binary-tree-from-inorder-and-postorder-traversal/)
+
+**中序数组大小一定是和后序数组的大小相同的（这是必然），这也是用以切割后序数组方法。**
+
+```c++
+class Solution {
+public:
+    TreeNode* build(vector<int>& inorder, vector<int>& postorder){
+    	//空节点
+        if(postorder.size() == 0){
+            return nullptr;
+        }
+        //叶子节点
+        TreeNode* root = new TreeNode(postorder[postorder.size() - 1]);
+        if(postorder.size() == 1){
+            return root;
+        }
+		//分割中序
+        int index_temp = 0; 
+        while(inorder[index_temp] != root->val){
+            index_temp++;
+        } 
+        vector<int> leftInorder(inorder.begin(), inorder.begin() + index_temp);
+        vector<int> rightInorder(inorder.begin() + index_temp + 1, inorder.end());
+		//分割后序
+        vector<int> leftPosetorder(postorder.begin(), postorder.begin() + leftInorder.size());
+        vector<int> rightPosetorder(postorder.begin() + leftInorder.size(), postorder.end() - 1);// 左闭右开
+
+        root->left = build(leftInorder, leftPosetorder);
+        root->right = build(rightInorder, rightPosetorder);
+
+        return root;
+        
+    }
+    TreeNode* buildTree(vector<int>& inorder, vector<int>& postorder) {
+        return build(inorder, postorder);
+    }
+};
+```
+
+## [从前序与中序遍历序列构造二叉树](https://leetcode.cn/problems/construct-binary-tree-from-preorder-and-inorder-traversal/)
+
+```c++
+class Solution {
+public:
+        TreeNode* build(vector<int>& preorder, vector<int>& inorder) {
+        if(preorder.size()==0){
+            return nullptr;
+        }
+        int rootVal = preorder[0];
+        TreeNode* root = new TreeNode(rootVal);
+        if(preorder.size() == 1){
+            return root;
+        }
+
+        int index = 0;
+        while(inorder[index] != rootVal){
+            index++;
+        }
+        vector<int> leftInorder(inorder.begin(), inorder.begin() + index);
+        vector<int> rightInorder(inorder.begin() + index + 1, inorder.end());
+
+        vector<int> leftPreorder(preorder.begin() + 1, preorder.begin() + 1 + leftInorder.size());
+        vector<int> rightPreorder(preorder.begin() + 1 + leftInorder.size(), preorder.end());
+
+        root->left = buildTree(leftPreorder, leftInorder);
+        root->right = buildTree(rightPreorder, rightInorder);
+
+        return root;
+    }
+    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {
+        return build(preorder, inorder);
+    }
+};
+```
+
+## [最大二叉树](https://leetcode.cn/problems/maximum-binary-tree/)
+
+```c++
+class Solution {
+public:
+    int max(vector<int>& nums){
+        int res = INT_MIN;
+        for(auto num:nums){
+            if(res < num){
+                res = num;
+            }
+        }
+        return res;
+    }
+    TreeNode* constructMaximumBinaryTree(vector<int>& nums) {
+		//结束条件
+        //  如果空数组，返回空指针
+        if(nums.size() == 0){
+            return nullptr;
+        }
+        int max_val = max(nums);
+        //  如果只有一个树，返回该节点
+        TreeNode* root = new TreeNode(max_val);
+        if(nums.size() == 1){
+            return root;
+        }
+        
+        //单层循环的逻辑
+        //	寻找最大值索引
+        int max_index = 0;
+        while(nums[max_index] != max_val){
+            max_index++;
+        }
+        //	拆分左右数组
+        vector<int> leftNums(nums.begin(), nums.begin()+max_index);
+        vector<int> rightNums(nums.begin()+max_index+1, nums.end());
+        //递归
+        root->left = constructMaximumBinaryTree(leftNums);
+        root->right = constructMaximumBinaryTree(rightNums);
+
+        return root;
+
+    }
+};
+```
+
+## [合并二叉树](https://leetcode.cn/problems/merge-two-binary-trees/)
+
+```c++
+class Solution {
+public:
+    TreeNode* mergeTrees(TreeNode* root1, TreeNode* root2) {
+    	//结束条件这么写其实没问题，可以画一下真值表确定
+        if(root1 == nullptr) return root2;
+        if(root2 == nullptr) return root1;
+
+        TreeNode* root = new TreeNode(root1->val + root2->val);
+
+        root->left = mergeTrees(root1->left, root2->left);
+        root->right = mergeTrees(root1->right, root2->right);
+        return root;
+
+    }
+};
+```
+
+## [二叉搜索树中的搜索](https://leetcode.cn/problems/search-in-a-binary-search-tree/)
+
+```c++
+class Solution {
+public:
+    TreeNode* travel(TreeNode* cur, int val){
+        if(cur == nullptr){
+            return nullptr;
+        }
+        if(cur->val == val){
+            return cur;
+        }
+        TreeNode* res = nullptr;
+        if(cur->val > val){
+            res = travel(cur->left, val);
+        }
+        if(cur->val < val){
+            res = travel(cur->right, val);
+        }
+        return res;
+    }
+    TreeNode* searchBST(TreeNode* root, int val) {
+        return travel(root,val);
+
+    }
+};
+```
+
+## [剑指 Offer II 053. 二叉搜索树中的中序后继](https://leetcode.cn/problems/P5rCT8/)
+
+先中序遍历，记录节点，然后返回下一个节点
+
+```c++
+class Solution {
+public:
+    void dfs(TreeNode* cur, vector<TreeNode*>& midTravel){
+        
+        if(cur == nullptr){
+            return ;
+        }
+        dfs(cur->left, midTravel);
+        midTravel.push_back(cur);        
+        dfs(cur->right,midTravel);
+    }
+
+    TreeNode* inorderSuccessor(TreeNode* root, TreeNode* p) {
+        vector<TreeNode*> midTravel;
+        dfs(root, midTravel);  
+        for(int i = 0; i < midTravel.size();i++){
+            if(midTravel[i] == p){
+                return i == midTravel.size() - 1? nullptr : midTravel[i+1];
+            }
+        }
+        return nullptr;      
+    }
+};
+```
+
+**如何通过中序遍历递归，并仅仅来维护中序遍历的前一个节点呢？**没能写好。
+
+## [验证二叉搜索树](https://leetcode.cn/problems/validate-binary-search-tree/)
+
+首先的想法是通过递归来做，但是递归结束条件不好写。不确定应该在什么时候返回：如果在叶子节点返回，那返回值是ture还是false？对一个叶子没办法判断吧；如果在倒数第二层返回，那么如何判断倒数第二层呢？
+
+最终的方法还是利用性质 **二叉搜索树的中序遍历单调递增，且没有重复**
+
+## [二叉搜索树中的众数](https://leetcode.cn/problems/find-mode-in-binary-search-tree/)
+
+最简单的方法是遍历一遍，然后用哈希表记录每一个元素出现的次数，得到出现频次最大的数。
+
+注意：按照map的value排序，可以先转化成vector<pair<int,int>>，再调用sort排序。**sort()函数的第三个参数自定义排序规则，要将其命名为静态成员变量**
+
+```c++
+class Solution {
+public:
+    // 要注意，sort()函数的第三个参数自定义排序规则，要将其命名为静态成员变量
+    static bool Mycmp (pair<int, int> p1, pair<int, int> p2){
+        return p1.second > p2.second;
+    }
+    void dfs(TreeNode* cur, unordered_map<int,int>& umap){
+        if(cur == nullptr){
+            return;
+        }
+        
+        if(umap.find(cur->val) == umap.end()){
+            umap.insert(pair<int,int>{cur->val, 1});
+        }else{
+            umap[cur->val]++;
+        }
+        dfs(cur->left, umap);
+        dfs(cur->right, umap);
+    }
+    vector<int> findMode(TreeNode* root) {        
+        unordered_map<int,int> umap;
+        dfs(root, umap);
+        // 按照map的value排序，可以先转化成vector<pair<int,int>>，再调用sort排序。
+        vector<pair<int,int>> vec_pair;
+        for(unordered_map<int,int>::iterator it = umap.begin(); it != umap.end(); it++){
+            vec_pair.push_back(pair<int,int>{it->first, it->second});
+        }
+        sort(vec_pair.begin(), vec_pair.end(),Mycmp);
+        int max_count = vec_pair[0].second;
+        vector<int> res;
+        for(auto p:vec_pair){
+            if(p.second == max_count){
+                res.push_back(p.first);
+            }
+        }
+        return res;
+    }
+};
+```
+
+## [二叉树的最近公共祖先](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree/)
+
+二叉树回溯的话，只能用后序遍历。
+
+寻找方法就是 在左子树里找 p或q，找到了就返回 p或q；在右子树里找 p或q，找到了就返回 p或q，没有的话就返回NULL；**如果，左右子树返回值都不是 NULL，就说明这个节点就是最近的公共祖先了，就继续向上返回 该节点。**
+
+后序遍历，前面提到的 找到了就返回 p或q，也就是返回 cur；找到最近公共祖先就返回公共祖先，也是返回cur。(cur也可以是递归的root)
+
+那么代码就这么写
+
+```c++
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+		if(root == p || root == q || root == NULL){
+            return root;
+        }        
+        TreeNode* left =  lowestCommonAncestor(root->left, p,q);
+        TreeNode* right =  lowestCommonAncestor(root->right, p,q);
+        // 这部分就是向上返回的过程
+        if(left == NULL && right != NULL){
+            return right;
+        }
+        else if(left != NULL && right == NULL){
+            return left;
+        }
+        else if(left == NULL && right == NULL){
+            return NULL;
+        }
+        else{
+            return root;        
+        }
+        
+    }
+};
+```
+
+## [二叉搜索树的最近公共祖先](https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-search-tree/)
+
+又来到了二叉搜索树，那就需要考虑应用BST的性质：左小；右大；没重复；中序遍历有序。
+
+有用的性质应该是左小右大，来减少搜索的次数。
+
+所以代码这么写
+
+```c++
+class Solution {
+public:
+    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {
+		if(root == p || root == q || root == NULL){
+            return root;
+        }
+        TreeNode* left = NULL;
+        TreeNode* right = NULL;
+        if(root->val > p->val && root->val > q->val){
+            left =  lowestCommonAncestor(root->left, p,q);
+            
+        }else if(root->val < p->val && root->val < q->val){
+            right =  lowestCommonAncestor(root->right, p,q);
+            left = NULL;
+        }else{
+            left =  lowestCommonAncestor(root->left, p,q);
+            right =  lowestCommonAncestor(root->right, p,q);
+        }
+        
+        // 这部分就是向上返回的过程
+        if(left == NULL && right != NULL){
+            return right;
+        }
+        else if(left != NULL && right == NULL){
+            return left;
+        }
+        else if(left == NULL && right == NULL){
+            return NULL;
+        }
+        else{
+            return root;        
+        }
+        
+    }
+};
+```
+
+## [二叉搜索树中的插入操作](https://leetcode.cn/problems/insert-into-a-binary-search-tree/)
+
+首先的思路是直接用val一个个比较，直到找到合适的叶子节点，把该值插入。写完代码发现时间超出限制。
+
+```c++
+//时间超出限制
+class Solution {
+public:
+    TreeNode* insertIntoBST(TreeNode* root, int val) {
+        if(root == nullptr){
+            return root;
+        }
+        TreeNode* cur;
+        cur = root;
+        while(cur->left != nullptr || cur->right != nullptr){
+            if(cur->left && cur->val > val){
+                cur = cur->left;
+            }else if(cur->right && cur->val < val){
+                cur = cur->right;
+            }
+        }
+        if(cur->val > val){
+            cur->left = new TreeNode(val);
+        }else{
+            cur->right = new TreeNode(val);
+        }
+        return root;
+    }
+};
+```
+
+上面的代码问题是**没有考虑到val该插入的地方是根节点**的情况。更改代码如下：
+
+```c++
+class Solution {
+public:
+    TreeNode* insertIntoBST(TreeNode* root, int val) {
+        if(root == nullptr){
+            TreeNode* root = new TreeNode(val);
+            return root;
+        }
+        TreeNode* cur;
+        cur = root;
+        if(root->val > val && root->left == nullptr){
+            TreeNode* temp = root;
+            TreeNode* root = new TreeNode(val);
+            root->right = temp;
+            return root;
+        }
+        if(root->val < val && root->right == nullptr){
+            TreeNode* temp = root;
+            TreeNode* root = new TreeNode(val);
+            root->left = temp;
+            return root;
+        }
+        while(cur->left != nullptr || cur->right != nullptr){
+            if(cur->left && cur->val > val){
+                cur = cur->left;
+            }else if(cur->right && cur->val < val){
+                cur = cur->right;
+            }
+        }
+        if(cur->val > val){
+            cur->left = new TreeNode(val);
+        }else{
+            cur->right = new TreeNode(val);
+        }
+        return root;
+    }
+};
+```
+
+结果还是超出时间限制，决定查看题解。发现是 二叉搜索树遍历的问题。
+
+```c++
+class Solution {
+public:
+    TreeNode* insertIntoBST(TreeNode* root, int val) {
+        if(root == nullptr){
+            TreeNode* root = new TreeNode(val);
+            return root;
+        }
+        TreeNode* cur;
+        cur = root;
+        if(root->val > val && root->left == nullptr){
+            TreeNode* temp = root;
+            TreeNode* root = new TreeNode(val);
+            root->right = temp;
+            return root;
+        }
+        if(root->val < val && root->right == nullptr){
+            TreeNode* temp = root;
+            TreeNode* root = new TreeNode(val);
+            root->left = temp;
+            return root;
+        }
+        TreeNode* pre = nullptr;
+        while(cur != nullptr){
+            pre = cur;
+            if(cur->val > val){
+                cur = cur->left;
+            }else if(cur->val < val){
+                cur = cur->right;
+            }
+        }
+        if(pre->val > val){
+            pre->left = new TreeNode(val);
+        }else{
+            pre->right = new TreeNode(val);
+        }
+        return root;
+    }
+};
+```
+
+## [删除二叉搜索树中的节点](https://leetcode.cn/problems/delete-node-in-a-bst/)
+
+想法是先找到要删除的节点cur，然后**把删除后的节点的左孩子插入到右孩子里**，返回一个新的node，然后按照cur与其父节点pre的关系，将node插入到pre的孩子。
+
+```c++
+class Solution {
+public:
+//cur的左子树一定是插入到cur的右子树中，最左侧的节点
+    TreeNode* insertIntoBST(TreeNode* rootLeft, TreeNode* rootRight) {
+        TreeNode* cur = rootRight;
+        TreeNode* pre = nullptr;
+        while(cur != nullptr){
+            pre = cur;
+            //cout << cur->val << endl;
+            cur = cur->left;
+        }
+        pre->left = rootLeft;
+        return rootRight;
+    }
+
+    TreeNode* deleteNode(TreeNode* root, int key) {
+        if(root == nullptr){
+            return root;
+        }
+        TreeNode* pre = nullptr;
+        TreeNode* cur = root;
+        while(cur != nullptr && cur->val != key){
+            pre = cur;
+            if(cur->val > key){
+                cur = cur->left;
+            }else{
+                cur = cur->right;
+            }
+        }
+        // 后面相当于把cur->right 的子树 插入到cur->left 的子树上
+        TreeNode* temp = nullptr;
+        if(cur != nullptr){
+            //cout << cur->val;
+            if(cur->left != nullptr && cur->right != nullptr){
+                //cout << cur->left->val << ' '<< cur->right->val << endl;
+                temp = insertIntoBST(cur->left, cur->right);
+                
+            }else if(cur->left != nullptr && cur->right == nullptr){
+                temp = cur->left;
+            }else if(cur->left == nullptr && cur->right != nullptr){
+                temp = cur->right;
+            }else{
+                temp = nullptr;
+            }
+        }
+        if(pre == nullptr){
+            root = temp;
+        }else{
+            if(pre->left == cur){
+                pre->left = temp;
+            }else{
+                pre->right = temp;
+            }
+        }
+        return root;
+    }
+};
+```
+
+
+
+## [修剪二叉搜索树](https://leetcode.cn/problems/trim-a-binary-search-tree/)
+
+首先的想法是找到**下边界**的节点，然后将**该节点的左侧部分**都删除。然后找到**上边界**的节点，然后将**该节点的右侧部分**都删除。
+
+迭代的方法分三步：
+
+1. 先把root节点定位到[low, high]区间内。
+2. 再修建左子树，
+3. 再修减右子树。
+
+之所以可以分别进行2.3步，就是因为root已经在low, high区间内了，也就是说low在root的左子树，high在root的右子树。
+
+```c++
+class Solution {
+public:
+    TreeNode* trimBST(TreeNode* root, int low, int high) {
+        if(root == nullptr){
+            return root;
+        }
+		// 先把root节点定位到[low, high]区间内。
+        while(root != nullptr && (root->val < low || root->val > high)){
+            if(root->val < low){
+                root = root->right;
+            }else{
+                root = root->left;
+            }
+        }
+		// 修左子树
+        TreeNode* cur = root;
+        while(cur != nullptr){
+            while(cur->left && cur->left->val < low){
+                cur->left = cur->left->right;
+            }
+            cur = cur->left;
+        }
+		// 修左子树
+        cur = root;
+        while(cur != nullptr){
+            while(cur->right && cur->right->val > high){
+                cur->right = cur->right->left;
+            }
+            cur = cur->right;
+        }
+        return root;
+    }
+};
+
+```
+
+## [将有序数组转换为二叉搜索树](https://leetcode.cn/problems/convert-sorted-array-to-binary-search-tree/)
+
+该问题即为通过二叉搜索树的中序遍历构造一个二叉搜索树，且要求这棵树是一个**高度平衡的二叉树**。思路就是先找中间节点，分割左右，递归构造。
+
+```c++
+class Solution {
+public:
+    TreeNode* sortedArrayToBST(vector<int>& nums) {
+        if(nums.size() == 0){
+            return nullptr;
+        }
+
+        int index = nums.size() >> 1;
+        TreeNode* root = new TreeNode(nums[index]);
+        vector<int> numsLeft(nums.begin(), nums.begin() + index);
+        vector<int> numsRight(nums.begin() + index + 1, nums.end());
+        root->left = sortedArrayToBST(numsLeft);
+        root->right = sortedArrayToBST(numsRight);
+
+        return root;
+
+    }
+};
+```
+
+[有序链表转换二叉搜索树](https://leetcode.cn/problems/convert-sorted-list-to-binary-search-tree/)
+
+这道题的思路就是利用快慢指针找到链表的中间节点，其他思路类似。
+
+```c++
+class Solution {
+public:
+    //快慢指针找到链表的中间节点
+    ListNode* getMedian(ListNode* left, ListNode* right) {
+        ListNode* fast = left;
+        ListNode* slow = left;
+        while (fast != right && fast->next != right) {
+            fast = fast->next;
+            fast = fast->next;
+            slow = slow->next;
+        }
+        return slow;
+    }
+
+    TreeNode* buildTree(ListNode* left, ListNode* right) {
+        if (left == right) {
+            return nullptr;
+        }
+        ListNode* mid = getMedian(left, right);
+        TreeNode* root = new TreeNode(mid->val);
+        root->left = buildTree(left, mid);
+        root->right = buildTree(mid->next, right);
+        return root;
+    }
+
+    TreeNode* sortedListToBST(ListNode* head) {
+        return buildTree(head, nullptr);
+    }
+};
+```
+
+# 回溯算法
+
+## 基础知识
+
+递归逻辑的下面一般是回溯的逻辑。
+
+回溯的效率：**因为回溯的本质是穷举，穷举所有可能，然后选出我们想要的答案**，如果想让回溯法高效一些，可以加一些剪枝的操作，但也改不了回溯法就是穷举的本质。
+
+回溯法，一般可以解决如下几种问题：
+
+- 组合问题：N个数里面按一定规则找出k个数的集合
+- 切割问题：一个字符串按一定规则有几种切割方式
+- 子集问题：一个N个数的集合里有多少符合条件的子集
+- 排列问题：N个数按一定规则全排列，有几种排列方式
+- 棋盘问题：N皇后，解数独等等
+
+**回溯法解决的问题都可以抽象为树形结构**
+
+##  回溯法模板
+
+- 回溯函数模板返回值以及参数
+
+  回溯法的参数一般不容易一次性确定下来，所以需要先写逻辑然后确定参数。
+
+- 回溯函数终止条件
+
+  ```
+  if (终止条件) {
+      存放结果;
+      return;
+  }
+  ```
+
+- 回溯搜索的遍历过程
+
+  for循环：横向遍历
+
+  递归：纵向遍历
+
+  ```
+  for (选择：本层集合中元素（树中节点孩子的数量就是集合的大小）) {
+      处理节点/元素;
+      backtracking(路径，选择列表); // 递归
+      回溯，撤销处理结果
+  }
+  ```
+
+```
+void backtracking(参数) {
+    if (终止条件) {
+        存放结果;
+        return;
+    }
+
+    for (选择：本层集合中元素（树中节点孩子的数量就是集合的大小）) {
+        处理节点;
+        backtracking(路径，选择列表); // 递归
+        回溯，撤销处理结果
+    }
+}
+
+```
+
+## 组合问题
+
+### [组合](https://leetcode.cn/problems/combinations/)
+
+给定两个整数 `n` 和 `k`，返回范围 `[1, n]` 中所有可能的 `k` 个数的组合。
+
+回溯的宽度 就是 n，回溯的深度 是 k，当path的size为k时，就返回。注意`startIndex`的作用。
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> res;
+    vector<int> path;
+    void backTrack(int n, int k, int startIndex){
+        if(path.size() == k){
+            res.push_back(path);
+            return;
+        }
+
+        for(int i = startIndex; i < n;i++){
+            path.push_back(i+1);
+            backTrack(n, k, i+1);
+            path.pop_back();
+        }
+    }
+    vector<vector<int>> combine(int n, int k) {
+        backTrack(n, k, 0);
+        return res;
+    }
+};
+```
+
+进一步优化的剪枝思想是如果从startIndex开始遍历的剩余节点已经不够结果要求的长度了，那么就不要再进行后续的宽度搜索了。
+
+剩余的结果要求的长度是`k-path.size()`；那么遍历就要满足`i < or <= n-(k-path.size())`，举个例子，目前的情况是`path.size()=0, k=3, n=4`，`n-(k-path.size()) = 1`，而此时 i 可以等于 1，从索引 1 开始遍历的后三个数，是可以满足条件的。所以 `i  <= n-(k-path.size())`。
+
+改进后：
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> res;
+    vector<int> path;
+    void backTrack(int n, int k, int startIndex){
+        if(path.size() == k){
+            res.push_back(path);
+            return;
+        }
+
+        for(int i = startIndex; i < n-(k-path.size()) +1;i++){
+            path.push_back(i+1);
+            backTrack(n, k, i+1);
+            path.pop_back();
+        }
+    }
+    vector<vector<int>> combine(int n, int k) {
+        backTrack(n, k, 0);
+        return res;
+    }
+};
+```
+
+### [组合总和](https://leetcode.cn/problems/combination-sum/)
+
+这一道题自己的想法有两点错误：
+
+1. 没有判断 `*sum > target`的时候剪枝，这个时候会溢出报错，如果少了这个条件话，那么如果出现大于target的情况之后就不会返回，并且以后也不会返回，那么就会死循环，溢出。
+2. 没有引入 startIndex 这个参数，因为我想的是可以重复出现，就可以每次都从i=0开始，但是如果是这样的话，结果会重复输出同一个target的不同的排列情况。与题意不符。
+
+```c++
+class Solution {
+public:
+    vector<int> path;
+    vector<vector<int>> res;
+    void backTrack(vector<int>& candidates, int target, int* summ, int startIndex){
+        if(*summ > target){
+            return;
+        }
+        
+        if(target == *summ){
+            res.push_back(path);
+            return;
+        }
+		
+        for(int i = startIndex; i < candidates.size(); i++){
+            path.push_back(candidates[i]);
+            (*summ) = (*summ) + candidates[i];
+            backTrack(candidates, target, summ, i);
+            path.pop_back();
+            (*summ) = (*summ) - candidates[i];
+        }
+    }
+
+    vector<vector<int>> combinationSum(vector<int>& candidates, int target) {
+        int summ = 0;
+        backTrack(candidates, target, &summ, 0);
+        return res;
+    }
+};
+```
+
+### [ 组合总和 II](https://leetcode.cn/problems/combination-sum-ii/)
+
+需要去重？去重方法：横向搜索的时候不能有重复。思考了一下可不可以在单层递归逻辑那里实现去重，但发现这跟二叉树的层序遍历还有一些区别，没办法完全区分开横向搜索和纵向搜索。
+
+**所以我们要去重的是同一树层上的“使用过”，同一树枝上的都是一个组合里的元素，不用去重**。如何判断同一树层上元素（相同的元素）是否使用过了呢。
+
+首先将数组进行排序，之后通过构造used数组来判断，
+
+**如果`candidates[i] == candidates[i - 1]` 并且 `used[i - 1] == false`，就说明：前一个树枝，使用了candidates[i - 1]，也就是说同一树层使用过candidates[i - 1]**。
+
+**如果`candidates[i] == candidates[i - 1]` 并且 `used[i - 1] == true`，就说明：当前树枝，使用了candidates[i - 1]**
+
+为什么可以这么表示呢？看代码注释
+
+```c++
+class Solution {
+public:
+    vector<int> path;
+    vector<vector<int>> res;
+    
+    void backTrack(vector<int>& candidates, int target, int* summ, int startIndex, vector<bool>& used){
+    if(target < *summ){
+        return;
+    }
+    
+    if(target == *summ){
+        res.push_back(path);
+        return;
+    }
+    
+    for(int i = startIndex; i < candidates.size(); i++){
+        if(i > 0 && candidates[i-1] == candidates[i] && used[i-1] == false){
+            continue;
+        }
+        
+        path.push_back(candidates[i]);
+        used[i] = true;//因为在这里回溯，把下面递归中前一位的标志位设为了true
+        *summ += candidates[i];
+        backTrack(candidates, target, summ, i+1, used);
+        path.pop_back();
+        *summ -= candidates[i];
+        used[i] = false; //因为在这里回溯，把前一位的标志位设为了false
+    }
+} 
+
+    vector<vector<int>> combinationSum2(vector<int>& candidates, int target) {
+        int summ = 0;
+        sort(candidates.begin(), candidates.end());
+        vector<bool> used(candidates.size(), false);
+        backTrack(candidates, target, &summ, 0, used);
+        return res;
+    }
+};
+```
+
+### [组合总和 III](https://leetcode.cn/problems/combination-sum-iii/)
+
+```c++
+class Solution {
+public:
+    vector<int> path;
+    vector<vector<int>> res;
+    void backTrack(vector<int>& candidates, int k, int n, int satrtIndex, int* summ){
+        // 结束条件1
+        if(*summ > n || path.size() > k){
+            return;
+        }
+        // 结束条件2
+        if(*summ == n && path.size() == k){
+            res.push_back(path);
+            return;
+        }
+        //						剪枝
+        for(int i = satrtIndex; i <= candidates.size() - (k-path.size()); i++){
+            path.push_back(candidates[i]);
+            *summ += candidates[i];
+            backTrack(candidates, k, n, i+1, summ);
+            *summ -= candidates[i];
+            path.pop_back();
+        }
+    }
+
+    vector<vector<int>> combinationSum3(int k, int n) {
+        vector<int> candidates;
+        for(int i = 1; i <= 9;i++){
+            candidates.push_back(i);
+        }        
+        int summ = 0;
+        backTrack(candidates, k, n, 0, &summ);
+        return res;
+    }
+};
+```
+
+### [组合总和 Ⅳ](https://leetcode.cn/problems/combination-sum-iv/)
+
+这个题会考虑到不同的排列组合（可以重复使用，令`startIndex=0`即可），**如果用回溯的话会超出时间限制**。回溯代码如下：
+
+```c++
+class Solution {
+public:
+    int res = 0;
+    void backTrack(vector<int>& nums, int target, int* summ, int startIndex){
+        if(*summ > target){
+            return;
+        }
+        if(*summ == target){
+            res++;
+            return;
+        }
+
+        for(int i = 0; i < nums.size(); i++){
+            *summ += nums[i];
+            backTrack(nums, target, summ, 0);
+            *summ -= nums[i];
+        }
+    }
+    int combinationSum4(vector<int>& nums, int target) {
+        int summ = 0;
+        backTrack(nums, target, &summ, 0);
+        return res;
+    }
+};
+```
+
+### [电话号码的字母组合](https://leetcode.cn/problems/letter-combinations-of-a-phone-number/)
+
+**为什么` string.insert()`这个函数调用不了？**
+
+这一题自己的想法在于审题错误，在回溯的树中，树的每一层横向搜索是不一样的。
+
+```c++
+class Solution {
+private:
+    unordered_map<char, string> umap;
+public:
+    vector<string> res;
+    string path;
+
+    void backTrack(string& digits, int k, int startIndex){
+        if(path.size() > k){
+            return;
+        }
+        if(path.size() == k){
+            res.push_back(path);
+            return;
+        }
+        string chars = umap[digits[startIndex]]; // 首先找到要横向遍历的字符串
+
+        for(int i = 0;i < chars.size(); i++){
+            path.push_back(chars[i]);
+            backTrack(digits, k, startIndex+1); // index+1 找到下一个按键对应的字符串
+            path.pop_back(); 
+        }
+    }
+    vector<string> letterCombinations(string digits) {
+        if(digits.size() == 0){
+            return {};
+        }
+        umap.insert(pair<char, string>{'2', "abc"});
+        umap.insert(pair<char, string>{'3', "def"});
+        umap.insert(pair<char, string>{'4', "ghi"});
+        umap.insert(pair<char, string>{'5', "jkl"});
+        umap.insert(pair<char, string>{'6', "mno"});
+        umap.insert(pair<char, string>{'7', "pqrs"});
+        umap.insert(pair<char, string>{'8', "tuv"});
+        umap.insert(pair<char, string>{'9', "wxyz"});
+        
+        int k = digits.size();
+        backTrack(digits, k, 0);
+        return res;
+    }
+};
+```
+
+## 切割问题
+
+切割问题和组合问题类似，组合问题是选择元素，切割问题是在元素间==“添加分隔符”==。
+
+代码里怎么表示 ==分隔符== 呢？答案是==stratIndex==
+
+代码里怎么表示 ==“分割的子串”== 呢？这里说的是子串，其实说是==前缀==的话更合适。用==[startIndex, i]== 来表示。
+
+### [分割回文串](https://leetcode.cn/problems/palindrome-partitioning/)
+
+判断回文串 用双指针
+
+```c++
+class Solution {
+public:
+    vector<vector<string>> res;
+    vector<string> path;
+    bool isHuiwen(string& s,int left, int right){
+        if(s.size() == 1){
+            return true;
+        }
+
+        
+        while(left < right){
+            if(s[left] != s[right]){
+                return false;
+            }
+            left++;right--;
+        }
+        return true;
+    }
+
+    void backTrack(string& s, int startIndex){
+        if(startIndex >= s.size()){
+            res.push_back(path);
+            return;
+        }
+
+        for(int i = startIndex; i < s.size(); i++){
+            if(isHuiwen(s, startIndex, i)){
+                path.push_back(s.substr(startIndex, i-startIndex+1));
+            }else{
+                continue;
+            }
+            backTrack(s, i+1);
+            path.pop_back();
+        }
+
+    }
+    vector<vector<string>> partition(string s) {
+        backTrack(s, 0);
+        return res;
+        
+    }
+};
+```
+
+### [复原 IP 地址](https://leetcode.cn/problems/restore-ip-addresses/)
+
+要考虑的是结束条件：一定为4个字段，并且是全部的字符都用上了。
+
+考虑不合法字段的情况：
+
+```c++
+bool isSubIP(string& s, int left, int right){
+    string temp = s.substr(left, right-left+1);
+    if((temp[0] == '0' && temp.size() != 1) || temp.size() > 3 || stoi(temp) > 255){
+        return false;
+    }else{
+        return true;
+    }
+}
+```
+
+全部代码
+
+```c++
+class Solution {
+public:
+    vector<string> res; // 所有结果
+    vector<string> IP;// 每一个结果的不同段
+    bool isSubIP(string& s, int left, int right){
+        string temp = s.substr(left, right-left+1);
+        if((temp[0] == '0' && temp.size() != 1) || temp.size() > 3 || stoi(temp) > 255){
+            return false;
+        }else{
+            return true;
+        }
+    }
+    bool isAllUsed(vector<string>& IP, string& s){
+        string sIP;
+        for(auto ip:IP){
+            sIP += ip;
+        }
+        return sIP.size() == s.size() ? true:false;
+    }
+
+    void backTrack(string& s, int startIndex, int pointNum){
+        if(pointNum == 4 && isAllUsed(IP, s)){
+            // 将 vector<string> IP 转化成 string IP
+            string sIP;
+            for(int i = 0; i < IP.size() - 1; i++){
+                sIP += IP[i];
+                sIP += ".";
+            }
+            sIP += IP[IP.size() - 1];
+            res.push_back(sIP);
+            return;
+        }
+
+        for(int i = startIndex; i < s.size(); i++){
+            // 判断该字段[startIndex, i]是否满足要求
+            if(isSubIP(s, startIndex, i)){
+                // 如果是一个合法的IP字段
+                IP.push_back(s.substr(startIndex, i-startIndex+1));
+                pointNum++;
+            }else{
+                // 否则，continue
+                continue;
+            }
+            //递归
+            backTrack(s, i+1, pointNum);
+            //回溯
+            IP.pop_back();
+            pointNum--;
+        }
+        
+    }
+    vector<string> restoreIpAddresses(string s) {
+        backTrack(s, 0, 0);
+        return res;
+    }
+};
+```
+
+## 子集问题
+
+### [子集](https://leetcode.cn/problems/subsets/)
+
+```c++
+class Solution {
+public:
+    vector<int> subset;
+    vector<vector<int>> res;
+    void backTrack(vector<int>& nums, int startIndex){
+        //结束条件，注意不是 nums.zie()-1
+        if(startIndex == nums.size()){
+
+            return;
+        }
+
+        for(int i = startIndex; i < nums.size(); i++){
+            subset.push_back(nums[i]);
+            res.push_back(subset);
+            backTrack(nums, i+1);
+            subset.pop_back();
+        }
+
+    }
+    vector<vector<int>> subsets(vector<int>& nums) {
+        res.push_back(subset);
+        backTrack(nums, 0);
+        
+        return res;
+    }
+};
+```
+
+### [子集 II](https://leetcode.cn/problems/subsets-ii/)
+
+该题的主要考虑的是去重，结果中不能包括重复子集。那么去重的思路也就是横向搜索的时候，不要回溯元素相同的节点了，遇到该元素和前一个元素相同的情况，就直接把这一支剪掉即可，该方法首先需要对元素进行排序，维护used数组来判断相同元素是在同一层中被使用还是在同一分支上被使用。这个去重思路与 ==组合总和 II== 相似
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> res;
+    vector<int> subset;
+    void backTrack(vector<int>& nums, int startIndex, vector<bool>& used){
+        // 结束条件
+        if(startIndex >= nums.size()){
+            return;
+        }
+
+        //
+        for(int i = startIndex; i < nums.size(); i++){
+            //先去重
+            if(i > startIndex && nums[i-1] == nums[i] && used[i-1] == false){
+                continue;
+            }else{
+                subset.push_back(nums[i]);
+                res.push_back(subset);
+                used[i] = true;
+                backTrack(nums, i+1, used);
+                subset.pop_back();
+                used[i] = false;
+            }
+        }
+    }
+    vector<vector<int>> subsetsWithDup(vector<int>& nums) {
+        sort(nums.begin(), nums.end());
+        vector<bool> used(nums.size(), false);
+        res.push_back(subset);
+        backTrack(nums, 0, used);
+        return res;
+    }
+};
+```
+
+### [递增子序列](https://leetcode.cn/problems/non-decreasing-subsequences/)
+
+这个题要注意：
+
+保证递增的逻辑如下：
+
+```c++
+if(!subset.empty() && nums[i] < subset.back()){
+    continue;
+}
+```
+
+而去重的逻辑则不能用之前的used数组了，因为用used数组需要先对原来的used进行排序才行，但是这样就不满足题意了，所以这里的去重逻辑为
+
+```c++
+unordered_set<int> uset;
+for(int i = startIndex; i < nums.size(); i++){
+    // 去重
+    if(uset.find(nums[i])  != uset.end() ){
+        continue;
+    }
+    uset.insert(nums[i]);
+    XXX       
+}
+```
+
+总代码
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> res;
+    vector<int> subset;
+    void backTrack(vector<int>& nums, int startIndex){
+        if(startIndex >= nums.size()){
+            return;
+        }        
+        unordered_set<int> uset;
+        for(int i = startIndex; i < nums.size(); i++){
+            // 去重
+            
+            if(uset.find(nums[i])  != uset.end() ){
+                continue;
+            }
+            uset.insert(nums[i]);
+            // 保证递增
+            if(!subset.empty() && nums[i] < subset.back()){
+                continue;
+            }
+            subset.push_back(nums[i]);
+            if(subset.size() > 1){
+                res.push_back(subset);
+            }
+            backTrack(nums, i+1);
+            subset.pop_back();            
+        }
+    }
+    vector<vector<int>> findSubsequences(vector<int>& nums) {
+
+        backTrack(nums, 0);
+        return res;
+    }
+};
+```
+
+## 排列问题
+
+### [全排列](https://leetcode.cn/problems/permutations/)
+
+用used数组标记每一个数是否被用了，并且去掉重复使用同一个数
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> res;
+    vector<int> path;
+    
+    void backTrack(vector<int>& nums, int startIndex, vector<bool>& used){
+        
+        if(path.size() == nums.size() ){
+            
+            res.push_back(path);
+            return;
+        }
+
+        for(int i = 0; i < nums.size(); i++){
+            if(used[i] == true) continue;
+            path.push_back(nums[i]);
+            used[i] = true;
+            backTrack(nums, 0, used);
+            path.pop_back();
+            used[i] = false;
+        }
+    }
+    vector<vector<int>> permute(vector<int>& nums) {
+        vector<bool> used(nums.size(), false);
+        backTrack(nums, 0, used);
+        return res;
+    }
+};
+```
+
+
+
+### [全排列 II](https://leetcode.cn/problems/permutations-ii/)
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> res;
+    vector<int> path;
+    void backTrack(vector<int>& nums, vector<bool>& used){
+        if(path.size() == nums.size()){
+            res.push_back(path);
+            return;
+        }
+        
+        for(int i = 0;i < nums.size(); i++){
+            if(i > 0 && nums[i-1] == nums[i] && used[i-1] == false){
+                continue;
+            }
+            if(used[i] == true){
+                continue;
+            }
+            path.push_back(nums[i]);
+            used[i] = true;
+            backTrack(nums, used);
+            path.pop_back();
+            used[i] = false;
+
+        }
+    }
+    vector<vector<int>> permuteUnique(vector<int>& nums) {
+        sort(nums.begin(), nums.end()); // 排序
+        vector<bool> used(nums.size(), false);
+        backTrack(nums, used);
+        return res;
+    }
+};
+```
+
+### [重新安排行程](https://leetcode.cn/problems/reconstruct-itinerary/)
+
+
+
+### [N 皇后](https://leetcode.cn/problems/n-queens/)
+
+
+
+### [解数独](https://leetcode.cn/problems/sudoku-solver/)
+
+
+
+# 贪心算法
+
+## 基础理论
+
+贪心算法是从局部最优推导出全局最优的方法。
+
+贪心算法一般分为如下四步：
+
+- 将问题分解为若干个子问题
+- 找出适合的贪心策略
+- 求解每一个子问题的最优解
+- 将局部最优解堆叠成全局最优解
+
+## 例题
+
+### [分发饼干](https://leetcode.cn/problems/assign-cookies/)
+
+**这里的局部最优就是大饼干喂给胃口大的，充分利用饼干尺寸喂饱一个，全局最优就是喂饱尽可能多的小孩**。
+
+```c++
+class Solution {
+public:
+    int findContentChildren(vector<int>& g, vector<int>& s) {
+        sort(g.begin(), g.end());
+        sort(s.begin(), s.end());
+
+        int res = 0;
+        for(int i = s.size()-1, j = g.size()-1; i >= 0 && j >= 0;){
+            if(s[i] >= g[j]){
+                res++;                
+                i--;
+                j--;
+            }else{
+                j--;
+            }            
+        }
+        return res;
+
+    }
+};
+```
+
+### [摆动序列](https://leetcode.cn/problems/wiggle-subsequence/)
+
+要找到一段序列中最大的摆动序列，其实就是**统计这个序列中的波峰和波谷的个数。**
+
+```c++
+class Solution {
+public:
+    int wiggleMaxLength(vector<int>& nums) {
+        int res = 1;
+        int preDiff = 0;
+        int curDiff = 0;
+        //             不判断最右侧了
+        for(int i = 0;i < nums.size()-1;i++){
+            curDiff = nums[i+1] - nums[i];  
+            // 波谷                             波峰
+            if((preDiff <= 0 && curDiff > 0) || (preDiff >= 0 && curDiff < 0)){
+                res++;
+                preDiff = curDiff;
+            }
+            
+        }
+        return res;
+    }
+};
+```
+
+### [最大子数组和](https://leetcode.cn/problems/maximum-subarray/)
+
+给你一个整数数组 `nums` ，请你找出一个具有最大和的连续子数组（子数组最少包含一个元素），返回其最大和。**子数组** 是数组中的一个连续部分。
+
+这个用动态规划好像更能说得通，要注意**连续这一个特点**，所以如果dp[i-1]提供的作用是副作用，即`dp[i-1] < 0`，那就从当前位置`nums[i]`再开始。
+
+```c++
+class Solution {
+public:
+    
+    int maxSubArray(vector<int>& nums) {
+        
+        vector<int> dp(nums.size(), 0);
+        dp[0] = nums[0];
+        int res = nums[0];
+        for(int i = 1; i < nums.size(); i++){            
+            dp[i] = max(nums[i], dp[i-1] + nums[i]);
+            res = max(res, dp[i]);
+        }
+
+        return res;
+
+    }
+};
+```
+
+### [买卖股票的最佳时机](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock/)
+
+给定一个数组 `prices` ，它的第 `i` 个元素 `prices[i]` 表示一支给定股票第 `i` 天的价格。
+
+要注意一定是先买入再卖出，直接求最值是不对的。这也是动态规划的思想，首先动态规划维护==[0,i-1]==这个子序列的最小值minPrice，代表最大利润的dp数组的转移方程则为
+
+```c++
+dp[i] = max(dp[i-1], nums[i] - minPrice);
+```
+
+```c++
+class Solution {
+public:
+    void printVec(vector<int>& dp){
+        for(auto d:dp){
+            cout << d << " ";
+        }
+        cout << endl;
+    }
+    int maxProfit(vector<int>& prices) {
+        vector<int> dp(prices.size(), 0);
+        int minPrice = INT_MAX;
+        for(int i = 1;i < prices.size();i++){
+            minPrice = min(minPrice, prices[i-1]);
+            dp[i] = max(dp[i-1], prices[i]-minPrice);
+        }
+        printVec(dp);
+        return dp[dp.size()-1];
+    }
+};
+```
+
+### [买卖股票的最佳时机 II](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-ii/)
+
+在每一天，你可以决定是否购买和/或出售股票。你在任何时候 **最多** 只能持有 **一股** 股票。你也可以先购买，然后在 **同一天** 出售。==可以在抛出之后，继续购买==，区别是可以重复购买。
+
+陷入上面的循环购买的思想怪圈之后这个题就有些复杂了，代码随想录中的给的贪心方法是：==只收集每一天的正利润==，先计算每一天的利润，正利润求和。
+
+```c++
+class Solution {
+public:
+    void printVec(vector<int>& dp){
+        for(auto d:dp){
+            cout << d << " ";
+        }
+        cout << endl;
+    }
+    int maxProfit(vector<int>& prices) {
+        vector<int> ProfitDay(prices.size()-1, 0);
+        int res;
+        for(int i = 0; i < ProfitDay.size();i++){
+            ProfitDay[i] = prices[i+1]-prices[i];
+            if(ProfitDay[i]>0) res += ProfitDay[i];
+        }
+        printVec(ProfitDay);
+        return res;
+    }
+};
+```
+
+### [跳跃游戏](https://leetcode.cn/problems/jump-game/)
+
+给定一个非负整数数组 `nums` ，你最初位于数组的 **第一个下标** 。数组中的每个元素代表你在该位置可以跳跃的最大长度。判断你是否能够到达最后一个下标。
+
+不用考虑是跳几步，只考虑可能覆盖的最大范围。只要最大范围可以包括最后一个下标，那就返回true。
+
+```cpp
+class Solution {
+public:   
+    bool canJump(vector<int>& nums) {
+        if(nums.size()==1) return true;
+        int cover = 0;
+        for(int i = 0; i <= cover; i++){
+            cover = max(cover, i + nums[i]);
+            cout << cover << endl;
+            if(cover >= nums.size()-1) return true;
+        }
+        return false;
+    }
+};
+```
+
+### [跳跃游戏 II](https://leetcode.cn/problems/jump-game-ii/)
+
+返回到达 `nums[n - 1]` 的最小跳跃次数。
+
+==要想清楚什么时候步数才一定要加一呢？==**这里需要统计两个覆盖范围，当前这一步的最大覆盖和下一步最大覆盖**。如果移动下标达到了当前这一步的最大覆盖最远距离了，还没有到终点的话，那么就必须再走一步来增加覆盖范围，直到覆盖范围覆盖了终点。
+
+```c++
+class Solution {
+public:   
+    int jump(vector<int>& nums) {
+        if(nums.size()==1) return 0;
+        int nextCover = 0;
+        int curCover = 0;
+        int res = 0;
+        for(int i = 0; i <= nums.size()-1; i++){
+            nextCover = max(nextCover, i + nums[i]);
+            // 如果 i 已经到了当前cover的最大索引
+            if(i == curCover){
+                // 如果当前cover没能到达终点
+                if(curCover < nums.size()-1){
+                    //就加一步
+                    res++;
+                    curCover = nextCover;
+                    //if(nextCover >= nums.size()-1) break;
+                }else{
+                    break;
+                }
+            }            
+        }
+        return res;
+    }
+};
+```
+
+### [K 次取反后最大化的数组和](https://leetcode.cn/problems/maximize-sum-of-array-after-k-negations/)
+
+给你一个整数数组 `nums` 和一个整数 `k` ，按以下方法修改该数组：
+
+- 选择某个下标 `i` 并将 `nums[i]` 替换为 `-nums[i]` 。
+
+重复这个过程恰好 `k` 次。可以多次选择同一个下标 `i` 。
+
+以这种方式修改数组后，返回数组 **可能的最大和** 。
+
+贪心，局部最优到全局最优
+
+那这道题贪心的策略就是每一次选择的都是绝对值最大的负数(小于零的最小的数)，如果没有小于零的，那么就反转最小的非负整数。==总的来说就是反转最小的数。==
+
+```c++
+class Solution {
+public:
+    void reverseMin(vector<int>& nums){
+        int min = INT_MAX;
+        int index = 0;
+        for(int i = 0;i < nums.size();i++){
+            min = min > nums[i] ? nums[i] : min;
+        }
+        for(int i = 0;nums[i] != min;i++){
+            index++;
+        }
+        nums[index] = -nums[index];
+    }
+    int largestSumAfterKNegations(vector<int>& nums, int k) {
+        for(int j = 0;j < k;j++){
+            reverseMin(nums);
+        }
+        int res = 0;
+        for(auto n:nums){
+            res += n;
+        }
+        return res;
+    }
+};
+```
+
+### [加油站](https://leetcode.cn/problems/gas-station/)
+
+如果总油量大于总的消耗量，那么就说明每一步的剩余油量的和是大于0的，说明可以跑完一圈。
+
+用curSum记录`[0,i]`的剩余油量的和，如果`curSum < 0`，则说明`[0,i]`都不可以作为起始点。此时应该认为可以从`start= i+1` 开始，并将curSum置0。如果遍历完整个数组之后，没有遇到`curSum < 0`的情况，又因为该题肯定存在解，那么就可以认为start为起点。如果遇到了`curSum < 0`，就重新更新start和curSum。
+
+```c++
+class Solution {
+public:
+    int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+        int curSum = 0, totalSum = 0,start = 0;
+        for(int i = 0;i < gas.size();i++){
+            curSum += gas[i] - cost[i];
+            totalSum += gas[i] - cost[i];
+            if(curSum < 0){
+                start = i+1;
+                curSum = 0;
+            }
+        }
+        if(totalSum < 0) return -1;
+        return start;
+    }
+};
+```
+
+
+
+### [分发糖果](https://leetcode.cn/problems/candy/)
+
+这里面需要先从左到右比较，如果右大于左，则糖果加一；否则，就发一个。
+
+然后需要从左到右比较，如果左大于右，则要`res[i] = max(res[i+1] + 1, res[i])`，而不是简单加一；
+
+比较左是否大于右时，要从右往左遍历，这样才会利用到上一次的比较结果。同理，比较右是否大于左时，要从左往右遍历。
+
+```c++
+class Solution {
+public:
+    int candy(vector<int>& ratings) {
+        vector<int> res(ratings.size(), 1);
+        // 从左到右
+        for(int i = 1; i < ratings.size();i++){
+            if(ratings[i] > ratings[i-1]){
+                res[i] = res[i-1] + 1;
+            }
+        }
+
+        // 从右到左
+        for(int i = res.size()-2; i >= 0;i--){
+            if(ratings[i+1] < ratings[i]){
+                res[i] = max(res[i+1] + 1, res[i]);
+            }
+        }
+
+        int resSum = 0;
+        for(auto r:res){
+            resSum += r;
+        }
+        return resSum;
+
+    }
+};
+```
+
+### [柠檬水找零](https://leetcode.cn/problems/lemonade-change/)
+
+在给20找零时，优先消耗10美元+5美元
+
+账单是20的情况，为什么要优先消耗一个10和一个5呢？
+
+**因为美元10只能给账单20找零，而美元5可以给账单10和账单20找零，美元5更万能！**
+
+```c++
+class Solution {
+public:
+    bool cannot10(unordered_map<int, int>& umap){
+        if(umap[5] > 0){
+            umap[5]--;
+            return false;
+        }else{
+            return true;
+        }
+    }
+    bool cannot20(unordered_map<int, int>& umap){
+        if(umap[5] >= 1 && umap[10] >= 1){
+            umap[5]--;
+            umap[10]--;
+            return false;
+        }
+        else if(umap[5] >= 3){
+            umap[5] -= 3;
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+    bool lemonadeChange(vector<int>& bills) {
+        unordered_map<int, int> umap;
+        umap.insert(pair<int, int>{5,0});
+        umap.insert(pair<int, int>{10,0});
+        umap.insert(pair<int, int>{20,0});
+
+        if(bills[0] != 5){
+            return false;
+        }
+        for(int i = 0;i < bills.size();i++){
+            
+            if(bills[i] == 10 && cannot10(umap)){
+                return false;
+            }
+            if(bills[i] == 20 && cannot20(umap)){
+                return false;
+            }
+            umap[bills[i]]++;
+        }
+        return true;
+    }
+};
+```
+
+### [根据身高重建队列](https://leetcode.cn/problems/queue-reconstruction-by-height/)
+
+遇到这种两个维度的，需要将两个维度分开考虑。首先按照身高进行排序，身高高的在前，如果身高相同，则第二个属性小的在前。然后按照身高从高到低的顺序，将每一个元素按第二个属性提示的位置插入到新的数组中。
+
+```c++
+class Solution {
+public:
+    static bool camp(vector<int>& a, vector<int>& b){
+        if(a[0] == b[0]) return a[1] < b[1];
+        return a[0] > b[0];
+    }
+    vector<vector<int>> reconstructQueue(vector<vector<int>>& people) {
+        sort(people.begin(), people.end(), camp);
+        vector<vector<int>> queue;
+        for(int i = 0;i < people.size();i++){
+            queue.insert(queue.begin() + people[i][1], people[i]);
+        }
+        return queue;
+    }
+};
+```
+
+### [用最少数量的箭引爆气球](https://leetcode.cn/problems/minimum-number-of-arrows-to-burst-balloons/)
+
+```c++
+class Solution {
+public:
+    static bool camp(vector<int>& a, vector<int>& b){
+        return a[0] < b[0];
+    }
+    int findMinArrowShots(vector<vector<int>>& points) {
+        if(points.size() <= 1) return points.size();
+        int res = 0;
+        sort(points.begin(), points.end(), camp);
+
+        for(int i = 1;i < points.size();i++){
+            // 第i个的起点已经大于第i-1个的终点了，就说明不在一堆，要放箭。
+            if(points[i][0] > points[i-1][1]){
+                res++;
+            }else{
+                // 把在一堆的气球的末尾统一
+                points[i][1] = min(points[i-1][1], points[i][1]);
+            }
+        }
+        ++res; //最后一箭
+        return res;
+
+    }
+};
+```
+
+### [无重叠区间](https://leetcode.cn/problems/non-overlapping-intervals/)
+
+这个题自己没有思路。
+
+题解思路：按照**右边界排序**，就要**从左向右遍历**，因为右边界越小越好，只要右边界越小，留给下一个区间的空间就越大，所以从左向右遍历，优先选右边界小的。
+
+按照**左边界排序**，就要**从右向左遍历**，因为左边界数值越大越好（越靠右），这样就给前一个区间的空间就越大，所以可以从右向左遍历。
+
+找到非重叠区域的个数，总个数-非重叠区域的个数 == 结果。
+
+```c++
+class Solution {
+public:
+    // 按照右边界排序
+    static bool cmp(vector<int>& a, vector<int>& b){
+        return a[1] < b[1];
+    }
+    int eraseOverlapIntervals(vector<vector<int>>& intervals) {
+        // 按照右边界排序
+        sort(intervals.begin(), intervals.end(), cmp);
+
+        // 从左向右遍历 找到非重叠区域个数
+        int nonOverNum = 0;
+        for(int i = 1;i < intervals.size();i++){
+            // i与i-1重叠
+            if(intervals[i][0] < intervals[i-1][1]){
+                intervals[i][1] = intervals[i-1][1];
+            }else{
+                nonOverNum++; // i与i-1不重叠 nonOverNum++
+            }
+        }
+        nonOverNum++; // 考虑最后一个区间
+        //cout << nonOverNum << endl;
+        return intervals.size() - nonOverNum;
+    }
+};
+```
+
+### [划分字母区间](https://leetcode.cn/problems/partition-labels/)
+
+把同一个字母的都圈在同一个区间里。
+
+```c++
+class Solution {
+public:
+
+    vector<int> partitionLabels(string s) {
+        // 统计每个字母出现的最大下标
+        int hash[26] = {0};
+        for(int i = 0;i < s.size();i++){
+            hash[s[i] - 'a'] = i;
+        }
+        
+        // 如果 , 那么就可以分割
+        vector<int> res;
+        int left = 0;
+        int right = 0;
+        for(int i = 0;i < s.size();i++){
+            // 确定右指针，这一点要理解一下
+            right = max(right, hash[s[i] - 'a']);
+            if(right == i){
+                res.push_back(right - left + 1);
+                left = i + 1;
+            }
+        }
+        return res;
+    }
+};
+```
+
+
+
+### [合并区间](https://leetcode.cn/problems/merge-intervals/)
+
+```c++
+class Solution {
+public:
+    //按照起始位置排序
+    static bool camp(vector<int>& a, vector<int>& b){
+        return a[1] < b[1];
+    }
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        sort(intervals.begin(), intervals.end(), camp);
+
+        vector<vector<int>> res;
+        res.push_back(intervals.back());
+        for(int i = intervals.size()-1;i >= 0;i--){
+            // 是否有重叠
+            if(res.back()[0] <= intervals[i][1]){
+                res.back()[0] = min(intervals[i][0], res.back()[0]);
+                //res.back()[1] = max(intervals[i][1], res.back()[1]);
+            }else{
+                res.push_back(intervals[i]);
+            }
+        }
+        //res.push_back(intervals[intervals.size()-1]);
+        return res;
+    }
+};
+```
+
+
+
+```c++
+class Solution {
+public:
+    //按照末尾位置排序
+    static bool camp(vector<int>& a, vector<int>& b){
+        return a[0] < b[0];
+    }
+    vector<vector<int>> merge(vector<vector<int>>& intervals) {
+        sort(intervals.begin(), intervals.end(), camp);
+
+        vector<vector<int>> res;
+        res.push_back(intervals[0]);
+        for(int i = 1;i < intervals.size();i++){
+            // 是否有重叠
+            if(res.back()[1] >= intervals[i][0]){
+                //res.back()[0] = min(intervals[i][0], res.back()[0]);
+                res.back()[1] = max(intervals[i][1], res.back()[1]);
+            }else{
+                res.push_back(intervals[i]);
+            }
+        }
+        //res.push_back(intervals[intervals.size()-1]);
+        return res;
+    }
+};
+```
+
+
+
+### [单调递增的数字](https://leetcode.cn/problems/monotone-increasing-digits/)
+
+思路：遇到前一位比当前位大的，则前一位减一，当前位设为9.
+
+注意，==`sNum[i] = '9'`==
+
+```c++
+class Solution {
+public:
+    int monotoneIncreasingDigits(int n) {
+        string sNum = to_string(n);
+        int flag = sNum.size();
+        for(int i = sNum.size()-1; i > 0; i--){
+
+            if(sNum[i-1] > sNum[i]){
+                sNum[i-1]--;
+                flag = i;
+                //sNum[i] = '9';
+            }
+        }
+        for(int i = flag;i < sNum.size();i++){
+            sNum[i] = '9';
+        }
+      
+        return stoi(sNum);
+
+    }
+};
+```
+
+### [买卖股票的最佳时机含手续费](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-with-transaction-fee/)
+
+这一题就是考虑手续费的买卖股票。回顾一下买卖股票的第一题，是只能有一次的买卖，维护一个动态规划数组。买卖股票的第二题，是可以重复购买，贪心的策略是收集每一天的正利润。但是在有手续费的情况下，之前的贪心策略就不适用了。
+
+思路：动态规划考虑手续费的思路应该是最直接的。该题动态规划的思路为
+
+```c++
+class Solution {
+public:
+    int maxProfit(vector<int>& prices, int fee) {
+        // dp[i][1]第i天持有的最多现金
+        // dp[i][0]第i天持有股票所剩的最多现金
+        int n = prices.size();
+        vector<vector<int>> dp(n, vector<int>(2,0));
+        dp[0][0] = -prices[0];
+        for(int i = 1;i < prices.size();i++){
+            //不持有股票		第i天不操作       第i天卖掉股票
+            dp[i][1] = max(dp[i-1][1], dp[i-1][0] + prices[i] - fee);
+            //持有股票 		第i天不操作       第i天买掉股票
+            dp[i][0] = max(dp[i-1][0], dp[i-1][1] -prices[i]);
+        }
+        return max(dp[n-1][0], dp[n-1][1]);
     }
 };
 ```
