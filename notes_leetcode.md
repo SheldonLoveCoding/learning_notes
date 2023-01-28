@@ -3409,3 +3409,277 @@ public:
 };
 ```
 
+### [监控二叉树](https://leetcode.cn/problems/binary-tree-cameras/)
+
+```c++
+class Solution {
+public:
+    int result;
+    int travel(TreeNode* cur){
+        // 空节点应该师有覆盖的状态，才不会在叶子节点处放置相机
+        if(cur == nullptr){
+            return 2;
+        }
+        //后序遍历，从树的一侧 自低向上遍历
+        int left = travel(cur->left);
+        int right = travel(cur->right);
+
+        // 如果左右孩子都是有覆盖的，因为相机是从低向上放置的，那么相机应该在孙子节点处，那么该节点是没有被覆盖的状态
+        if(left == 2 && right == 2){
+            return 0;
+        }
+        // 如果左右孩子中有没有被覆盖的，那么该节点应该放置相机
+        if(left == 0 || right == 0){
+            result++;
+            return 1;
+        }
+
+        // 如果左右孩子中有相机的，那么该节点就是被覆盖的状态
+        if(left == 1 || right == 1){
+            return 2;
+        }
+        
+        return -1;
+    }
+    int minCameraCover(TreeNode* root) {
+        result = 0;
+        //如果根节点是没有被覆盖的状态
+        if(travel(root) == 0){
+            result++;
+        }      
+   
+        return result;
+
+    }
+};
+```
+
+# 动态规划
+
+## 基础理论
+
+**对于动态规划问题，我将拆解为如下五步曲，这五步都搞清楚了，才能说把动态规划真的掌握了！**
+
+1. 确定dp数组（dp table）以及下标的含义
+2. 确定递推公式
+3. dp数组如何初始化
+4. 确定遍历顺序
+5. 举例推导dp数组
+
+## 基础例题
+
+### [斐波那契数](https://leetcode.cn/problems/fibonacci-number/)
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   dp[i]：第 i 个数的斐波那契数是dp[i]
+
+2. 确定递推公式
+
+   dp[i] = dp[i-1] + dp[i-2]
+
+3. dp数组如何初始化
+
+   dp[0] = 0; dp[1] = 1; 
+
+4. 确定遍历顺序
+
+   从0开始，正向到i
+
+5. 举例推导dp数组
+
+   0 1 1 2 3 5 8 13 21 34 55
+
+```c++
+class Solution {
+public:
+    int fib(int n) {
+        if(n <= 1) return n;
+
+        vector<int> dp(n+1, 0);
+        
+        dp[0] = 0;
+        dp[1] = 1;
+        for(int i = 2; i <= n;i++){
+            dp[i] = dp[i-1] + dp[i-2];
+        }
+        return dp[n];
+    }
+};
+```
+
+### [爬楼梯](https://leetcode.cn/problems/climbing-stairs/)
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   dp[i]：爬到第i层楼梯，有dp[i]种方法。
+
+2. 确定递推公式
+
+   dp[i] = dp[i-1] + dp[i-2] **通过手写前四种情况就可以找出规律**
+
+3. dp数组如何初始化
+
+   dp[0] = 0; dp[1] = 1; 
+
+4. 确定遍历顺序
+
+   从0开始，正向到i
+
+5. 举例推导dp数组
+
+   0 1 2 3 5 8 13 21 34 55
+
+```c++
+class Solution {
+public:
+    int climbStairs(int n) {
+        if (n <= 1) return n; // 因为下面直接对dp[2]操作了，防止空指针
+        vector<int> dp(n + 1);
+        dp[1] = 1;
+        dp[2] = 2;
+        for (int i = 3; i <= n; i++) { // 注意i是从3开始的
+            dp[i] = dp[i - 1] + dp[i - 2];
+        }
+        return dp[n];
+    }
+};
+```
+
+### [使用最小花费爬楼梯](https://leetcode.cn/problems/min-cost-climbing-stairs/)
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   dp[i]：爬到第i层楼梯的最小花费dp[i]
+
+2. 确定递推公式
+
+   因为是每一次只能往上爬一节或者两节，所以只考虑前两个状态即可
+
+   dp[i] = min(dp[i-1]+cost[i-1], dp[i-2]+cost[i-2]);
+
+3. dp数组如何初始化
+
+   dp[0] = 0; dp[1] = 0; 
+
+4. 确定遍历顺序
+
+   从0开始，正向到i
+
+5. 举例推导dp数组
+
+   | cost | 1    | 100  | 1    | 1    | 1    | 100  | 1    | 1    | 100  | 1    | 楼顶 |
+   | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+   | dp   | 0    | 0    | 1    | 2    | 2    | 3    | 3    | 4    | 4    | 5    | 6    |
+
+   ```cpp
+   class Solution {
+   public:
+       int minCostClimbingStairs(vector<int>& cost) {
+           if(cost.size() <= 1) return 0;
+           vector<int> dp(cost.size()+1, 0);
+           for(int i = 2; i < cost.size()+1;i++){
+               dp[i] = min(dp[i-1]+cost[i-1], dp[i-2]+cost[i-2]);
+           }
+           return dp.back();
+       }
+   };
+   ```
+
+
+
+### [不同路径](https://leetcode.cn/problems/unique-paths/)
+
+只能向右或者向下移动。
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i][j]`：移动到`[i,j]`的路径数`dp[i][j]`
+
+2. 确定递推公式
+
+   因为是每一次只能往右和往下走，所以只考虑前两个状态即可
+
+   `dp[i][j] = dp[i-1][j] + dp[i][j-1] `
+
+3. dp数组如何初始化
+
+   `dp[0][j] = 1;dp[i][0] = 0; `
+
+4. 确定遍历顺序
+
+   从0,0开始，正向到i,j
+
+5. 举例推导dp数组
+
+```cpp
+class Solution {
+public:
+    int uniquePaths(int m, int n) {
+        vector<vector<int>> dp(m, vector<int>(n, 0));
+
+        for(int i = 0; i < m;i++){
+            dp[i][0] = 1;
+        }
+        for(int j = 0; j < n;j++){
+            dp[0][j] = 1;
+        }
+
+        for(int i = 1; i < m;i++){
+            for(int j = 1; j < n;j++){
+                dp[i][j] = dp[i-1][j] + dp[i][j-1];
+            }
+        }
+        
+        return dp.back().back();
+
+    }
+};
+```
+
+### [不同路径 II](https://leetcode.cn/problems/unique-paths-ii/)
+
+只能向右或者向下移动，并且中间有障碍物。
+
+```cpp
+class Solution {
+public:
+    int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+        int m = obstacleGrid.size();
+        int n = obstacleGrid[0].size();
+        vector<vector<int>> dp(m, vector<int>(n, 0));
+
+        bool flag = true;
+        for(int i = 0; i < m;i++){
+            if(obstacleGrid[i][0] == 1){
+                dp[i][0] = 0;
+                flag = false;
+            }else if(flag == true){
+                dp[i][0] = 1;
+            }
+        }
+        flag = true;
+        for(int j = 0; j < n;j++){
+            if(obstacleGrid[0][j] == 1){
+                dp[0][j] = 0;
+                flag = false;
+            }else if(flag == true){
+                dp[0][j] = 1;
+            }
+        }
+
+        for(int i = 1; i < m;i++){
+            for(int j = 1; j < n;j++){
+                if(obstacleGrid[i][j] == 1){
+                    dp[i][j] = 0;
+                }else{
+                    dp[i][j] = dp[i-1][j] + dp[i][j-1];
+                }
+            }
+        }
+        
+        return dp.back().back();
+    }
+};
+```
+
