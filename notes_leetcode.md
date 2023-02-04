@@ -3683,3 +3683,327 @@ public:
 };
 ```
 
+### [不同的二叉搜索树](https://leetcode.cn/problems/unique-binary-search-trees/)
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i]`：`[0,i]`的数字构成的二叉搜索树的个数`dp[i]`
+
+2. 确定递推公式
+
+   从 0 开始到 i ，每一个数字 j 轮流做头节点，剩下的 `[0, j-1]` 和 `[j+1, i]` 分别在左右两个子树， `[0, j-1]` 有 j 个节点，有 `dp[j-1]` 种排列方式， `[j+1, i]`  有 `i-j` 个节点，有 `dp[i-j]`种排列方式，所以当  j 做头节点，按这种情况有 `dp[j-1] * dp[i-j] ` 种方式.
+
+   `dp[i] += dp[j-1] * dp[i-j]`
+
+3. dp数组如何初始化
+
+   `dp[0] = 1 `
+
+4. 确定遍历顺序
+
+   从0,0开始，正向到i,j
+
+5. 举例推导dp数组
+
+```cpp
+class Solution {
+public:
+    int numTrees(int n) {
+
+        vector<int> dp(n+1, 0);
+        dp[0] = 1;
+        for(int i = 1; i <= n;i++){
+            for(int j = 1; j <= i;j++){
+                dp[i] += dp[j-1]*dp[i-j];
+            }
+        }
+        return dp.back();
+
+    }
+};
+```
+
+### 背包问题
+
+#### 01背包问题
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i][j]`：从下标为`[0,i]`的物品里任意取，放入容量为`j`的背包里，可以获得的最大价值为`dp[i][j]`
+
+2. 确定递推公式
+
+   面对一个下标为 i 的物品，就是有两种选择，拿或者不拿。
+
+   不拿物品 i : 那么最大的价值就是 `dp[i-1][j]`
+
+   拿物品 i : 那么最大价值就是 `dp[i-1][j-weight[i]]+value[i]`
+
+   所以递推公式为 `dp[i][j]=max(dp[i-1][j], dp[i-1][j-weight[i]]+value[i])`
+
+3. dp数组如何初始化
+
+   - 首先是背包容量为0，`dp[i][0]=0`
+   - 当容量小于最小物品（已排序，下标为0）的体积时，一个物品也拿不了，`dp[0][j]=0`；当容量大于最小物品时， `dp[0][j]=value[0]`
+
+   ```cpp
+   vector<vector<int>> dp(n, vector<int>(bag, 0));
+   for(int j = weight[0];j <= bagCap;j++){
+       dp[0][j] = value[0];
+   }
+   ```
+
+   
+
+4. 确定遍历顺序
+
+   从0,0开始，正向到i,j
+
+   **要注意是先遍历物品还是先遍历背包容量：从更新公式来看，只依赖于前一个物品（0~i-1个）的状态，背包容量则是会有一定的跳跃（j-weight[i]），所以还是先遍历物品再遍历背包容量更直观。**
+
+   ```cpp
+   for(int i = 1;i < n;i++){
+   	for(int j = 1;j <= bagCap;j++){
+           if(j < weight[i]){
+               dp[i][j] = dp[i-1][j];
+           }
+           else{
+               dp[i][j]=max(dp[i-1][j], dp[i-1][j-weight[i]]+value[i]);
+           }
+           
+       }
+   }
+   ```
+
+   
+
+5. 举例推导dp数组
+
+```cpp
+
+#include <iostream>
+#include <algorithm>
+#include <vector>
+
+class Solution {
+public:
+    static bool cmp(std::vector<int>& a, std::vector<int>& b) {
+        return a[0] < b[0];
+    }
+    int solve01BagProblem(std::vector<std::vector<int>>& things, int bagCap) {
+        // things 是一个二维数组，n * 2，第一列是weight，第二列是value
+        int n = things.size();
+        std::vector<int> weight(n, 0);
+        std::vector<int> value(n, 0);
+        std::sort(things.begin(), things.end(), cmp);
+        for (int i = 0; i < things.size(); i++) {
+            weight[i] = things[i][0];
+            value[i] = things[i][1];
+        }
+
+        std::vector<std::vector<int>> dp(n, std::vector<int>(bagCap+1, 0));
+        for (int j = weight[0]; j <= bagCap; j++) {
+            dp[0][j] = value[0];
+        }
+
+        for (int i = 1; i < n; i++) {
+            for (int j = 1; j <= bagCap; j++) {
+                if (j < weight[i]) {
+                    dp[i][j] = dp[i - 1][j];
+                }
+                else {
+                    dp[i][j] = std::max(dp[i - 1][j], dp[i - 1][j - weight[i]] + value[i]);
+                }
+
+            }
+        }
+
+        return dp.back().back();
+    }
+};
+
+int main()
+{
+    
+    int bagCap = 4;
+    std::vector<std::vector<int>> things = { {3,20},{4,30}, {1,15}};
+    Solution S;
+    int res = 0;
+    res = S.solve01BagProblem(things, bagCap);
+    std::cout << res << std::endl;
+    return 0;
+}
+
+```
+
+#### 01背包问题进阶，改成dp一维数组
+
+原来的dp数组只用到了这一行和上一行，我们可以进一步把上一行拷贝到这一行，压缩到一个一维的dp数组。递推公式为 `dp[j]=max(dp[j], dp[j-weight[i]]+value[i])`
+
+初始化 `dp[0]=0`，都初始化为0.
+
+**需要从后向前遍历，倒序遍历**的原因是，本质上还是一个对二维数组的遍历，并且右下角的值依赖上一层左上角的值，因此需要保证左边的值仍然是上一层的，从右向左覆盖，所以倒序遍历。
+
+### [分割等和子集](https://leetcode.cn/problems/partition-equal-subset-sum/)
+
+看成是每一个物体的价值是`nums[i]`，每一个物体的体积是`nums[i]`
+
+要理解 `dp[target]==target` 则说明可以将其分割成等和的子集，就理解了为什么这道题可以看作是01背包问题：背包问题是要在容量为 `j` 的背包里获取最大的价值。在我们这道题里，每一个物体的价值和体积是一样的。所以 `dp[j] <= j`是恒成立的，而我们背包问题就是求解使得 `dp[j] == j`的。那如果 `j == target == sum/2`即 `dp[target]==target` 就说明是可以把这个数组分成两个等和的子集的。
+
+```cpp
+class Solution {
+public:
+    bool canPartition(vector<int>& nums) {
+        vector<int> dp(10001,0);
+        int sum = 0;
+        for(int n:nums){
+            sum += n;
+        }
+        if(sum % 2 == 1) return false;
+
+        int target = (sum >> 1);
+        for(int i = 0; i < nums.size(); i++) {
+            for(int j = target; j >= nums[i]; j--){
+                dp[j] = max(dp[j], dp[j-nums[i]]+nums[i]);
+            }
+        }
+
+        if(dp[target]==target) return true;
+        return false;
+
+    }
+```
+
+### [最后一块石头的重量 II](https://leetcode.cn/problems/last-stone-weight-ii/)
+
+本题其实就是尽量让石头分成重量相同的两堆，相撞之后剩下的石头最小
+
+```cpp
+class Solution {
+public:
+    int lastStoneWeightII(vector<int>& stones) {
+        vector<int> dp(15001, 0);
+        int sum = 0;
+        for(int n:stones){
+            sum += n;
+        }
+
+        int target = (sum >> 1);
+        for(int i = 0;i < stones.size();i++){
+            for(int j = target;j >= stones[i];j--){
+                dp[j] = max(dp[j], dp[j-stones[i]]+stones[i]);
+            }
+        }
+        int res = (sum - dp[target]) - dp[target];
+        return res;
+
+
+    }
+};
+```
+
+### [目标和](https://leetcode.cn/problems/target-sum/)
+
+首先对题目化解，要给给定的数组添加正负号，最终的结果就是 `子集1 - 子集2`，也就是要让`target = sum1 - sum2 = sum1 - (sum - sum1)  `，所以`sum1 = (sum + target)/2`，也就是找到数组中 和为 `(sum + target)/2`的子集的个数。
+
+dp[j] 表示 和为 j 的子集的个数。
+
+背包问题求组合的个数的递推公式 ` dp[j] += dp[j-nums[i]]`
+
+```cpp
+class Solution {
+public:
+    int findTargetSumWays(vector<int>& nums, int target) {
+        int sum = 0;
+        for(int n:nums){
+            sum += n;
+        }
+        int tar = (sum + target) / 2;
+        if((sum + target) % 2 != 0 || abs(target) > sum){
+            return 0;
+        }
+       
+
+        vector<int> dp(tar+1, 0);
+        dp[0] = 1;
+        for(int i = 0;i < nums.size();i++){
+            for(int j = tar;j >= nums[i];j--){
+                dp[j] += dp[j-nums[i]];
+            }
+        }
+        return dp[tar];
+
+    }
+};
+```
+
+### [一和零](https://leetcode.cn/problems/ones-and-zeroes/)
+
+给你一个二进制字符串数组 `strs` 和两个整数 `m` 和 `n` 。
+
+请你找出并返回 `strs` 的最大子集的长度，该子集中 **最多** 有 `m` 个 `0` 和 `n` 个 `1` 。
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i][j]`：子集中包含 `i` 个 `0` 和 `j` 个 `1` 时，该子集的最大长度`dp[i][j]`
+
+2. 确定递推公式
+
+   面对一个下标为 i 的str，就是有两种选择，拿或者不拿。
+
+   不拿str i : 那么最大长度就是 `dp[i][j]`
+
+   拿str i : 那么最大价值就是 `dp[i-zeroNum][j-oneNum]+1`； zeroNum 和 oneNum 分别为字符串str i 的0的个数 和 1 的个数。
+
+   所以递推公式为 `dp[i][j]=max(dp[i][j], dp[i-zeroNum][j-oneNum]+1)`
+
+3. dp数组如何初始化
+
+   均初始化为0
+
+4. 遍历顺序，i 和 j 均倒序遍历。m-->zeroNum; n-->oneNum
+
+```cpp
+class Solution {
+public:
+    int findMaxForm(vector<string>& strs, int m, int n) {
+        vector<vector<int>> dp(m+1, vector<int>(n+1,0));
+        for(string str:strs){
+            int zeroNum = 0, oneNum = 0;
+            for(char s:str){
+                if(s == '0') zeroNum++;
+                else oneNum++;
+            }
+
+            for(int i = m;i >= zeroNum;i--){
+                for(int j = n;j >= oneNum;j--){
+                    dp[i][j] = max(dp[i][j], dp[i-zeroNum][j-oneNum]+1);
+                }
+            }
+        }
+        return dp.back().back();
+
+    }
+};
+```
+
+### 完全背包问题
+
+有N件物品和一个最多能背重量为W的背包。第i件物品的重量是weight[i]，得到的价值是value[i] 。**每件物品都有无限个（也就是可以放入背包多次）**，求解将哪些物品装入背包里物品价值总和最大。
+
+**完全背包和01背包问题唯一不同的地方就是，每种物品有无限件**。我们知道01背包内嵌的循环是从大到小遍历，为了保证每个物品仅被添加一次。而**完全背包的物品是可以添加多次的，所以要从小到大去遍历**。
+
+**01背包内嵌的循环从倒序遍历，可以保证每个物品仅被添加一次。**因为把dp压缩成一维数组之后，j 从后往前遍历更新就可以等效于由二维dp数组的`dp[i-1][j], dp[i-1][j-weight[i]]`推导出`dp[i][j]`的过程，因为 j 是从后往前遍历更新，`dp[j-weight[i]]`就是还没有更新，还是`dp[i-1][j-weight[i]]`的状态。
+
+而完全背包从前向后遍历，就是每一个物品不止被添加一次了，是可以重复添加的。
+
+```cpp
+// 先遍历物品，再遍历背包
+for(int i = 0; i < weight.size(); i++) { // 遍历物品
+    for(int j = weight[i]; j <= bagWeight ; j++) { // 遍历背包容量
+        dp[j] = max(dp[j], dp[j - weight[i]] + value[i]);
+
+    }
+}
+```
+
