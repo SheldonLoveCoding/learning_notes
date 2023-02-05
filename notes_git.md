@@ -98,3 +98,13 @@ git fetch REMOTENAME BRANCHNAME
 git log BRANCHNAME.. REMOTENAME/BRANCHNAME
 git merge REMOTENAME/BRANCHNAME
 ```
+
+如果遇到问题`error: Your local changes to the following files would be overwritten by merge`，则需要根据自己的需求确定好解决方案。
+
+如果是直接用仓库中的文件覆盖掉本地文件，则直接
+
+```
+git reset --hard
+git pull REMOTENAME BRANCENAME
+```
+

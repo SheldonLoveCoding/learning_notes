@@ -4007,3 +4007,81 @@ for(int i = 0; i < weight.size(); i++) { // 遍历物品
 }
 ```
 
+### [零钱兑换](https://leetcode.cn/problems/coin-change/)
+
+这一题用回溯会超时
+
+```cpp
+class Solution {
+public:
+    int res = INT_MAX;
+    vector<int> path;
+    void backTrack(vector<int>& coins, int amount, long* sum, int startIndex){
+        if(*sum == amount){
+            res = res < path.size()? res: path.size();
+            return;
+        }
+        if(*sum > amount){
+            return;
+        }
+
+        for(int i = startIndex; i < coins.size(); i++){
+            path.push_back(coins[i]);
+            *sum += coins[i];
+            backTrack(coins, amount, sum, i);
+            path.pop_back();
+            *sum -= coins[i];
+        }
+    }
+    int coinChange(vector<int>& coins, int amount) {
+        path.clear();
+        long sum = 0;
+        backTrack(coins, amount, &sum, 0);
+        if(res == INT_MAX){
+            return -1;
+        }
+        return res;
+    }
+};
+```
+
+
+
+### [零钱兑换 II](https://leetcode.cn/problems/coin-change-ii/)
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[j]`：背包容量为 j 构成的组合数`dp[j]`
+
+2. 确定递推公式
+
+   `dp[j] += dp[j-nums[i]]`
+
+3. dp数组如何初始化
+
+   `dp[0] = 1`
+
+4. 确定遍历顺序
+
+   本题是**完全背包**，要求的是**组合数，所以遍历顺序是先正序遍历物品数，然后正序遍历背包。**
+
+   **如果要求的是排列数，就要先正序遍历背包，然后正序遍历物品数。**
+
+```cpp
+class Solution {
+public:
+    int change(int amount, vector<int>& coins) {
+        vector<int> dp(amount+1, 0);
+        dp[0] = 1;
+
+        for(int i = 0;i < coins.size();i++){
+            for(int j = coins[i]; j <= amount;j++){
+                dp[j] += dp[j - coins[i]];
+            }
+        }
+
+        return dp.back();
+    }
+};
+```
+
