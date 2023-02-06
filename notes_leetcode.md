@@ -4007,6 +4007,17 @@ for(int i = 0; i < weight.size(); i++) { // 遍历物品
 }
 ```
 
+背包问题模板汇总
+
+| 问题类型           | 模板注意要点                                                 |
+| ------------------ | ------------------------------------------------------------ |
+| 01背包             | 先遍历物品或先遍历背包都可以；<br />当dp数组是一维数组时，要倒序遍历背包。 |
+| 完全背包           | 当dp数组是一维数组时，要正序遍历背包，这样才是无限拿物品     |
+| 完全背包求组合问题 | 正序遍历背包；<br />先遍历物品，后遍历背包；                 |
+| 完全背包求排列问题 | 正序遍历背包；<br />先遍历背包，后遍历物品，这样才会把不同的物品次序看成是不同的。 |
+
+
+
 ### [零钱兑换](https://leetcode.cn/problems/coin-change/)
 
 这一题用回溯会超时
@@ -4081,6 +4092,94 @@ public:
         }
 
         return dp.back();
+    }
+};
+```
+
+### [单词拆分](https://leetcode.cn/problems/word-break/)
+
+单词拆分，这里相当于把背包容量改成了用字符串来表示了。没思路。
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i]`：背包容量的前 i 位部分可不可以用字典表示。可以，则`dp[i] = true`
+
+2. 确定递推公式
+
+   显然，`dp[i]`的状态与`dp[i-word.size()]`有关。如果`dp[i-word.size()]=true`，并且背包的 `[i-word.size(),i]`的子串与word相等，那么`dp[i]=true`
+
+3. dp数组如何初始化
+
+   `dp[0] = true`
+
+4. 确定遍历顺序
+
+   这个题是 排列问题，因为单词之间的顺序对结果有影响，所以是排列问题，所以要先遍历背包，再遍历物品。
+
+   因为是完全背包，所以正向遍历背包。
+
+```cpp
+class Solution {
+public:
+    bool isSame(string s1, string s2){
+        if(s1.size() != s2.size()){
+            return false;
+        }
+        for(int i = 0;i < s1.size();i++){
+            if(s1[i] != s2[i]){
+                return false;
+            }
+        }
+        return true;
+    }
+    bool wordBreak(string s, vector<string>& wordDict) {
+        vector<bool> dp(s.size() + 1, false);
+        dp[0] = true;
+
+        for(int i = 1; i <= s.size();i++){
+            for(int j = 0;j < wordDict.size();j++){
+                int size = wordDict[j].size();
+                if(i - size >= 0){
+                    string str = s.substr(i - size, size);
+                    if(isSame(str, wordDict[j]) && dp[i - size]){
+                        dp[i] = true;
+                    }
+                }
+            }
+        }
+
+        return dp.back();
+    }
+};
+```
+
+
+
+### [打家劫舍 III](https://leetcode.cn/problems/house-robber-iii/)（递归+DP）
+
+二叉树的节点A的孩子何其父节点不可以同时偷。
+
+```cpp
+class Solution {
+public:
+    vector<int> robTree(TreeNode* cur){
+        //vector<int> dp  dp[0]代表不偷当前节点，可以获得的最大金额； dp[1]代表偷当前节点，可以获得的最大金额；
+        if(cur == nullptr){
+            return {0,0};
+        }
+
+        vector<int> left = robTree(cur->left);
+        vector<int> right = robTree(cur->right);
+
+        vector<int> res(2,0);
+        res[1] = cur->val + left[0] + right[0];
+        res[0] = max(left[0], left[1]) + max(right[0], right[1]);
+        return res;
+
+    }
+    int rob(TreeNode* root) {
+        vector<int> res = robTree(root);
+        return max(res[0], res[1]);
     }
 };
 ```
