@@ -4205,7 +4205,6 @@ public:
    dp[i][1] = max(dp[i-1][1], -price[i])
    $$
    
-
 3. dp数组如何初始化
 
    `dp[0][0] = 0; dp[0][1] = -prices[0]`
@@ -4251,7 +4250,6 @@ public:
    dp[i][1] = max(dp[i-1][1], dp[i-1][0]-price[i])
    $$
    
-
 3. dp数组如何初始化
 
    `dp[0][0] = 0; dp[0][1] = -prices[0]`
@@ -4282,7 +4280,123 @@ public:
 
 
 
-### [买卖股票的最佳时机 III](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iii/)(最多进行2笔交易)
+### [买卖股票的最佳时机 III](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iii/)(最多进行2笔交易，但是只能持有一支)
 
+```cpp
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        /*
+        每一天有五种状态:
+        dp[i][0] 无操作
+        dp[i][1] 第i天 第一次未持有股票 手中的最大钱数
+        dp[i][2] 第i天 第一次持有股票 手中的最大钱数
+        dp[i][3] 第i天 第二次未持有股票 手中的最大钱数
+        dp[i][4] 第i天 第二次持有股票 手中的最大钱数
+        */
 
+        vector<vector<int>> dp(prices.size(), vector<int>(5, 0));
+        dp[0][2] = -prices[0];
+        dp[0][4] = -prices[0];
+
+        for(int i = 1; i < prices.size(); i++){
+            // i-1天就第一次没有持有股票 或 第i天第一次将股票卖掉了
+            dp[i][1] = max(dp[i-1][1], dp[i-1][2] + prices[i]);
+            // i-1天就持有股票 或 第i天第一次买入股票(在无操作的基础上)
+            dp[i][2] = max(dp[i-1][2], dp[i-1][0] - prices[i]);
+            // i-1天就第二次没有持有股票 或 第i天第二次将股票卖掉了
+            dp[i][3] = max(dp[i-1][3], dp[i-1][4] + prices[i]);
+            //i-1天就持有股票 或 第i天第二次买入股票(在第一次卖掉的基础上)
+            dp[i][4] = max(dp[i-1][4], dp[i-1][1] - prices[i]);
+        }
+        return dp[prices.size()-1][3];
+    }
+};
+```
+
+### [买卖股票的最佳时机 IV](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iv/)(最多k笔交易，不能同时参与多笔交易)
+
+根据 III 找规律。
+
+```cpp
+class Solution {
+public:
+    int maxProfit(int k, vector<int>& prices) {
+        if(prices.size() == 0) return 0;
+        int n = prices.size();
+        vector<vector<int>> dp(n, vector<int>(2*k+1, 0));
+        for(int i = 2; i < 2*k+1;i = i+2){
+            dp[0][i] = -prices[0];
+        }
+
+        for(int i = 1; i < n;i++){
+            for(int j = 1;j < 2*k+1;j++){
+                if(j % 2 == 1){
+                    dp[i][j] = max(dp[i-1][j], dp[i-1][j+1] + prices[i]);
+                }else{
+                    dp[i][j] = max(dp[i-1][j], dp[i-1][j > 3 ? j-3 : 0] - prices[i]);
+                }                
+            }
+        }
+        return dp[n-1][2*k-1];
+
+    }
+};
+```
+
+### [买卖股票的最佳时机含手续费](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-with-transaction-fee/)（可以多笔交易，但是只能持有一支股票，且有手续费）
+
+==注意手续费是在卖出股票之后才进行结算==
+
+```cpp
+class Solution {
+public:
+    int maxProfit(vector<int>& prices, int fee) {
+        // dp[i][1]第i天持有股票的最多现金
+        // dp[i][0]第i天不持有股票的最多现金
+        vector<vector<int>> dp(prices.size(), vector<int>(2,0));
+        dp[0][0] = 0;
+        dp[0][1] = -prices[0];
+        for(int i = 1;i < prices.size();i++){
+            dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i] - fee); // 卖出
+            dp[i][1] = max(dp[i-1][1], dp[i-1][0] - prices[i]);
+        }
+        return dp.back()[0];
+    }
+};
+```
+
+### [最佳买卖股票时机含冷冻期](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-with-cooldown/)（可以多笔交易，但是卖出后第二天不能操作）
+
+第一思路是通过一个标志位来记录前一天是否卖出，从而确定今天是否冻结，但是结果不对。
+
+```cpp
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        /*
+        dp[i][0] 第i天持有股票
+        dp[i][1] 第i天正常不持有股票
+        dp[i][2] 今天卖出
+        dp[i][3] 今天冷冻期
+        */
+        if(prices.size() == 0) return 0;
+        int n = prices.size();
+        vector<vector<int>> dp(n, vector<int>(4, 0));
+
+        dp[0][0] = -prices[0];
+
+        for(int i = 1; i < n;i++){
+            // 第i天持有股票
+            dp[i][0] = max(dp[i-1][0], max(dp[i-1][3], dp[i-1][1]) - prices[i]);
+            dp[i][1] = max(dp[i-1][1], dp[i-1][3]);
+            dp[i][2] = dp[i-1][0] + prices[i];
+            dp[i][3] = dp[i-1][2];
+        } 
+
+        return max(dp[n-1][3], max(dp[n-1][1], dp[n-1][2]));
+
+    }
+};
+```
 
