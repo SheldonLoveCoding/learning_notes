@@ -4184,3 +4184,105 @@ public:
 };
 ```
 
+### [买卖股票的最佳时机](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock/)(只能买卖一次股票)
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i][0]`：第 i 天不持有股票，手中的钱数为`dp[i][0]`
+
+   `dp[i][1]`：第 i 天持有股票，手中的钱数为`dp[i][1]`
+
+2. 确定递推公式
+
+   显然，`dp[i]`的状态与`dp[i-1]`有关。
+
+   如果第 i 天不持有股票，那么有可能是 i-1 天就没有持有股票，或者是在第 i 天把股票卖掉，更新公式为
+   $$
+   dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i])
+   $$
+   如果第 i 天持有股票，由于本题只能买卖一次股票，一开始的钱数是 0， 所以第 i 天持有股票要么是第 i 天买入的，要么之前买入的，更新公式
+   $$
+   dp[i][1] = max(dp[i-1][1], -price[i])
+   $$
+   
+
+3. dp数组如何初始化
+
+   `dp[0][0] = 0; dp[0][1] = -prices[0]`
+
+4. 确定遍历顺序
+
+   正序遍历
+
+```cpp
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        vector<vector<int>> dp(prices.size(), vector<int>(2,0));
+        dp[0][0] = 0;
+        dp[0][1] = -prices[0];
+        for(int i = 1;i < prices.size();i++){
+            dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i]);
+            dp[i][1] = max(dp[i-1][1], -prices[i]);
+        }
+        return dp.back()[0];
+    }
+};
+```
+
+### [买卖股票的最佳时机 II](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-ii/)(可以多次买卖股票，但是只能持有一支)
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i][0]`：第 i 天不持有股票，手中的钱数为`dp[i][0]`
+
+   `dp[i][1]`：第 i 天持有股票，手中的钱数为`dp[i][1]`
+
+2. 确定递推公式
+
+   显然，`dp[i]`的状态与`dp[i-1]`有关。
+
+   如果第 i 天不持有股票，那么有可能是 i-1 天就没有持有股票，或者是在第 i 天把股票卖掉，更新公式为
+   $$
+   dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i])
+   $$
+   如果第 i 天持有股票，第 i 天持有股票要么是第 i 天买入的，要么之前买入的，又因为可以多次购买，所以更新公式在上一题的基础上修改为
+   $$
+   dp[i][1] = max(dp[i-1][1], dp[i-1][0]-price[i])
+   $$
+   
+
+3. dp数组如何初始化
+
+   `dp[0][0] = 0; dp[0][1] = -prices[0]`
+
+4. 确定遍历顺序
+
+   正序遍历
+
+```cpp
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        // dp[i][1]第i天持有股票的最多现金
+        // dp[i][0]第i天不持有股票的最多现金
+        vector<vector<int>> dp(prices.size(), vector<int>(2,0));
+        dp[0][0] = 0;
+        dp[0][1] = -prices[0];
+        for(int i = 1;i < prices.size();i++){
+            dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i]);
+            dp[i][1] = max(dp[i-1][1], dp[i-1][0] - prices[i]);
+        }
+        return dp.back()[0];
+    }
+};
+```
+
+
+
+
+
+### [买卖股票的最佳时机 III](https://leetcode.cn/problems/best-time-to-buy-and-sell-stock-iii/)(最多进行2笔交易)
+
+
+
