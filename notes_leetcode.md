@@ -4197,10 +4197,14 @@ public:
    显然，`dp[i]`的状态与`dp[i-1]`有关。
 
    如果第 i 天不持有股票，那么有可能是 i-1 天就没有持有股票，或者是在第 i 天把股票卖掉，更新公式为
+   
+   `dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i])`
    $$
    dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i])
    $$
-   如果第 i 天持有股票，由于本题只能买卖一次股票，一开始的钱数是 0， 所以第 i 天持有股票要么是第 i 天买入的，要么之前买入的，更新公式
+   如果第 i 天持有股票，由于本题只能买卖一次股票，一开始的钱数是 0， 所以第 i 天持有股票要么是第 i 天买入的（`-prices[i]`），要么之前买入的，更新公式
+   
+   `dp[i][1] = max(dp[i-1][1], -prices[i])`
    $$
    dp[i][1] = max(dp[i-1][1], -price[i])
    $$
@@ -4242,10 +4246,14 @@ public:
    显然，`dp[i]`的状态与`dp[i-1]`有关。
 
    如果第 i 天不持有股票，那么有可能是 i-1 天就没有持有股票，或者是在第 i 天把股票卖掉，更新公式为
+   
+   `dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i])`
    $$
    dp[i][0] = max(dp[i-1][0], dp[i-1][1] + prices[i])
    $$
    如果第 i 天持有股票，第 i 天持有股票要么是第 i 天买入的，要么之前买入的，又因为可以多次购买，所以更新公式在上一题的基础上修改为
+   
+   `dp[i][1] = max(dp[i-1][1], dp[i-1][0]-prices[i])`
    $$
    dp[i][1] = max(dp[i-1][1], dp[i-1][0]-price[i])
    $$
@@ -4396,6 +4404,223 @@ public:
 
         return max(dp[n-1][3], max(dp[n-1][1], dp[n-1][2]));
 
+    }
+};
+```
+
+### [子序列-最长递增子序列](https://leetcode.cn/problems/longest-increasing-subsequence/)
+
+**子序列**：在原序列中删除或保留某些位置的元素，元素间的相应位置不变。
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i]`：以 `nums[i]`结尾的**递增子序列**的长度
+
+2. 确定递推公式
+
+   j 是 `[0, i-1]`的范围，根据 `dp[j]`的值更新`dp[i]`的值。如果在`nums[i] > nums[j]`的情况下，则可以得到一个递增子序列的可能长度`dp[j]+1`。与之前未更新的`dp[i]`作比较，继续更新。
+
+   `if(nums[i] > nums[j]) dp[i] = max(dp[i], dp[j]+1)`
+   $$
+   dp[i][1] = max(dp[i-1][1], -price[i])
+   $$
+
+3. dp数组如何初始化
+
+   均初始化为 1.
+
+4. 确定遍历顺序
+
+   正序遍历
+
+```cpp
+class Solution {
+public:
+    int lengthOfLIS(vector<int>& nums) {
+        int n = nums.size();
+        vector<int> dp(n, 1);
+        int res = 1;
+        for(int i = 1;i < n;i++){
+            for(int j = 0;j < i;j++){
+                if(nums[i] > nums[j]) dp[i] = max(dp[i], dp[j]+1);
+            }
+            if(dp[i] > res) res = dp[i]; // 题目要求的是最大值
+        }
+        return res;
+    }
+};
+```
+
+### [子序列-最长递增子序列的个数](https://leetcode.cn/problems/number-of-longest-increasing-subsequence/)
+
+```cpp
+class Solution {
+public:
+    int findNumberOfLIS(vector<int>& nums) {
+        vector<int> dp(nums.size(), 1); //以nums[i]为结尾的最长递增序列的长度
+        vector<int> count(nums.size(), 1); //以nums[i]为结尾的最长递增序列的个数
+
+        int max_num = 1;
+
+        for(int i = 1; i < nums.size();i++){
+            for(int j = 0;j < i;j++){
+                if(nums[j] < nums[i]){
+                    if(dp[j]+1 > dp[i]){ //如果找到了一个更长的递增序列
+                        count[i] = count[j]; //更新为count[j]，因为就相当于在 dp[j]代表的序列后面加一位nums[i];
+                    }else if(dp[j]+1 == dp[i]){//如果长度相等
+                        count[i] += count[j]; //则累加
+                    }
+                    dp[i] = max(dp[i], dp[j]+1);
+                }
+                             
+            }
+            if(max_num < dp[i]) max_num = dp[i];   
+        }
+        cout << max_num <<endl;
+        int res = 0;
+        for(int i = 0; i < nums.size();i++){
+            if(dp[i] == max_num) res += count[i];
+        }
+
+        return res;
+
+
+    }
+};
+```
+
+
+
+### [子序列-最长连续递增序列](https://leetcode.cn/problems/longest-continuous-increasing-subsequence/)
+
+更新公式：
+
+`if(nums[i] > nums[i-1]) dp[i] = dp[i-1]+1;`
+
+```cpp
+class Solution {
+public:
+    int findLengthOfLCIS(vector<int>& nums) {
+        vector<int> dp(nums.size(), 1);
+        int res = 1;
+        for(int i = 1; i < nums.size();i++){
+            if(nums[i] > nums[i-1]) dp[i] = dp[i-1]+1;
+            if(res < dp[i]) res = dp[i];
+        }
+
+        return res;
+
+    }
+};
+```
+
+
+
+### [子序列-最长重复子数组](https://leetcode.cn/problems/maximum-length-of-repeated-subarray/)
+
+子数组是指连续的子序列。该问题是找==nums1和num2中最大连续相等的子序列==
+
+```cpp
+class Solution {
+public:
+    int findLength(vector<int>& nums1, vector<int>& nums2) {
+        int n1 = nums1.size();
+        int n2 = nums2.size();
+        // nums1[i-1]结尾的数组和nums2[j-1]结尾的数组 的最大重复子数组的个数为dp[i][j]
+        vector<vector<int>> dp(n1+1, vector<int>(n2+1, 0));
+
+        dp[0][0] = 0;
+        int res = 0;
+
+        for(int i = 1; i <= n1; i++){
+            for(int j = 1; j <= n2;j++){
+                if(nums1[i-1] == nums2[j-1]){
+                    dp[i][j] = dp[i-1][j-1] + 1;
+                }
+                res = max(res, dp[i][j]);
+            }
+        }
+        return res;
+
+    }
+};
+```
+
+### [子序列-最长公共子序列](https://leetcode.cn/problems/longest-common-subsequence/)
+
+```cpp
+class Solution {
+public:
+    int maxUncrossedLines(vector<int>& nums1, vector<int>& nums2) {
+        int n1 = nums1.size();
+        int n2 = nums2.size();
+        // 以nums1[i-1] nums2[j-1] 结尾的数组，最长相等子序列的长度 dp[i][j]
+        vector<vector<int>> dp(n1+1, vector<int>(n2+1, 0));
+        
+        dp[0][0] = 0;
+        int res = 0;
+        for(int i = 1;i <= n1;i++){
+            for(int j = 1;j <= n2;j++){
+                if(nums1[i-1] == nums2[j-1]){
+                    dp[i][j] = dp[i-1][j-1] + 1;
+                }else{
+                    dp[i][j] = max(dp[i][j-1], dp[i-1][j]);
+                }
+                if(res < dp[i][j]) res = dp[i][j];
+            }
+        }
+        return res;
+    }
+};
+```
+
+
+
+### [子序列-不相交的线](https://leetcode.cn/problems/uncrossed-lines/)
+
+==直线不能相交，这就是说明在字符串A中 找到一个与字符串B相同的子序列==，且这个子序列不能改变相对顺序，只要相对顺序不改变，链接相同数字的直线就不会相交。==最大连线数就是AB中相同子序列的最大长度。==
+
+```cpp
+class Solution {
+public:
+    int maxUncrossedLines(vector<int>& nums1, vector<int>& nums2) {
+        int n1 = nums1.size();
+        int n2 = nums2.size();
+        // 以nums1[i-1] nums2[j-1] 结尾的数组，最长相等子序列的长度 dp[i][j]
+        vector<vector<int>> dp(n1+1, vector<int>(n2+1, 0));
+        
+        dp[0][0] = 0;
+        int res = 0;
+        for(int i = 1;i <= n1;i++){
+            for(int j = 1;j <= n2;j++){
+                if(nums1[i-1] == nums2[j-1]){
+                    dp[i][j] = dp[i-1][j-1] + 1;
+                }else{
+                    dp[i][j] = max(dp[i][j-1], dp[i-1][j]);
+                }
+                if(res < dp[i][j]) res = dp[i][j];
+            }
+        }
+        return res;
+    }
+};
+```
+
+### [子序列-最大子数组和](https://leetcode.cn/problems/maximum-subarray/)
+
+```cpp
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        // 包括下标i之前的最大连续子序列和为dp[i]
+        vector<int> dp(nums.size(), 0);
+        dp[0] = nums[0];
+        int res = nums[0];
+        for(int i = 1; i < nums.size(); i++){            
+            dp[i] = max(nums[i], dp[i-1] + nums[i]);
+            res = max(res, dp[i]);
+        }
+        return res;
     }
 };
 ```

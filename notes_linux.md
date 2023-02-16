@@ -183,7 +183,7 @@ gcc main.c -o app -I ./include/ -l calc -L ./lib/
 2. 
 
 3.  把动态库放入到 `/lib/，/user/lib/` 这个方法不推荐，因为这里面本身有很多库文件，有可能出现冲突。
-   
+
 
 ### 静态库动态库的优缺点
 
@@ -336,4 +336,161 @@ $(target): $(obj)
 clean:
 	rm -f $(obj)
 ```
+
+## GDB调试
+
+GDB是调试程序的工具，与GCC搭配形成一整套开发环境。
+
+GDB 主要帮助你完成下面四个方面的功能： 
+
+1. 启动程序，可以按照自定义的要求随心所欲的运行程序 
+2. 可让被调试的程序在所指定的调置的断点处停住（断点可以是条件表达式） 
+3. 当程序被停住时，可以检查此时程序中所发生的事 
+4. 可以改变程序，将一个BUG 产生的影响修正从而测试其他 BUG
+
+在为调试而编译程序时，需要：关掉`-O`；打开调试选项`-g`；打开所有Warning`-Wall`；
+
+```gcc
+gcc -g -Wall main.c -o app
+```
+
+==app 和 main.c 需要在同一个文件夹下。==
+
+### GDB命令
+
+| commend                   | function               |
+| ------------------------- | ---------------------- |
+| gdb                       | 打开gdb                |
+| quit                      | 退出                   |
+| set args 10 20            | 给程序设置参数         |
+| show args                 | 显示程序已设置的参数   |
+| help                      | 帮助                   |
+| list or l                 | 查看当前文件代码       |
+| list or l 行号            | 从当前文件指定行显示   |
+| list or l 函数名          | 从当前文件指定函数显示 |
+| list or l 文件名:行号     | 从指定文件指定行显示   |
+| list or l 文件名:函数名   | 从指定文件指定函数显示 |
+| set list or listsize 行数 | 设置显示行数           |
+| show list orlistsize      | 显示设置的显示行数     |
+
+### GDB断点操作
+
+| commend              | function                      |
+| -------------------- | ----------------------------- |
+| b/break 行号         | 在 行号 处打断点              |
+| info break           | 查看断点信息                  |
+| b/break 函数名       | 在 函数第一行 处打断点        |
+| d/delete 断点编号    | 删除断点                      |
+| dis/disable 断点编号 | 使断点无效                    |
+| ena/enable 断点编号  | 使断点生效                    |
+| b/break 行号 if 条件 | break 10 if i==3 一般用于循环 |
+
+### GDB调试操作
+
+| commend        | function                         |
+| -------------- | -------------------------------- |
+| start          | 程序停在第一行                   |
+| run            | 遇到断点才停                     |
+| c/continue     | 遇到下一个断点才停               |
+| n/next         | 执行下一行；不会进入函数体       |
+| s/step         | 向下单步调试；遇到函数进入函数体 |
+| finish         | 跳出函数体                       |
+| until          | 跳出循环                         |
+| p/print 变量名 | 打印变量值                       |
+| ptype 变量名   | 打印变量类型                     |
+|                |                                  |
+
+## 文件IO
+
+![文件IO](.\asset\文件IO.png)
+
+## 虚拟地址空间
+
+![虚拟地址空间](.\asset\虚拟地址空间.png)
+
+虚拟地址空间是不存在的，在一个可执行的文件运行时（一个进程在运行），系统会给改进程分配地址空间。
+
+上图是以32位的机器为例的虚拟地址空间。虚拟地址空间会通过MMU映射到真实物理地址的映射。
+
+## 文件描述符
+
+![文件描述符](.\asset\文件描述符.png)
+
+==文件描述符表的默认大小是1024==，每一个进程都包含一个文件描述符表，所以每一个进程最多可以打开1024个文件。
+
+Linux中一切皆文件，是指所有的设备在Linux中都被虚拟成一个“文件”，通过“文件”来管理设备。
+
+==同一个文件可以被多次打开，而被多次打开的文件描述符（`FILE`的结构体中的文件描述符）是不一样的。==
+
+## Linux系统IO函数
+
+Linux系统的函数API手册 在第二章；标准C库的函数手册 在第三章；
+
+```cpp
+int open (const char *pathname, int flags); // man 2 open
+/*
+pathname：要打开的文件路径
+flags：对文件的权限设置（O_RDONLY, O_WRONLY, O_RDWR）
+返回文件描述符，文件不存在返回-1；
+*/
+int open (const char *pathname, int flags, mode_t mode);
+/*
+pathname：要打开的文件路径
+flags：程序运行时 对文件的操作权限设置（必选项：O_RDONLY, O_WRONLY, O_RDWR， 可选项若干）
+mode：八进制的数，表示文件rwe权限，文件本身的权限 (read, write, and execute permission)  当前用户、当前用户所在组、其他组
+文件最终权限是 mode & ~umask（umask是抹去文件的一些权限）
+返回文件描述符，文件不存在返回-1；
+*/
+int close (int fd); 
+
+ssize_t read(int fd, void *buf, size_t count); 
+/*
+fd: 文件描述符
+buf: 要读取的数据存放的缓冲区，数组的地址
+count: buf数组的大小
+返回值是读取的数据的大小（字节数，大于零）或 0（文件读取完成了），如果出错返回-1
+*/
+ssize_t write (int fd, const void *buf, size_t count);
+/*
+fd: 文件描述符
+buf: 要写入的数据的缓冲区，数组的地址
+count: 要写的数据的实际大小
+返回值是写入的数据的大小（字节数，大于零）或 0（没有任何数据需要写入），如果出错返回-1
+*/
+off_t lseek (int fd, off_t offset, int whence);
+/*
+lseek()  repositions  the  file  offset of the open file description associated with the file
+       descriptor fd to the argument offset according to the directive whence as follows:
+
+       SEEK_SET
+              The file offset is set to offset bytes.
+
+       SEEK_CUR
+              The file offset is set to its current location plus offset bytes.
+
+       SEEK_END
+              The file offset is set to the size of the file plus offset bytes.
+fd: 文件描述符
+offset: 偏移量
+whence: SEEK_SET   SEEK_CUR   SEEK_END
+返回文件指针位置
+
+lseek(fd, 0, SEEK_SET); //移动文件指针到文件头
+lseek(fd, 0, SEEK_CUR); //获取当前文件指针的位置
+lseek(fd, 0, SEEK_END); //获取文件长度
+lseek(fd, 100, SEEK_END); //扩展文件长度 增加100字节 注意最后要 write(fd, " ", 1); 才会真正完成扩展
+*/
+int stat(const char *pathname, struct stat *statbuf);
+/*
+pathname: 文件路径
+statbuf: 传出参数，保存文件的信息
+返回值：0-成功  -1 失败
+*/
+```
+
+![stat](.\asset\stat.png)
+
+![st_mode](.\asset\st_mode.png)
+
+
 
