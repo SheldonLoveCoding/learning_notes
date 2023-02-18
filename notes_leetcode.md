@@ -4429,7 +4429,7 @@ public:
 
    均初始化为 1.
 
-4. 确定遍历顺序
+4. 确定遍历顺序 
 
    正序遍历
 
@@ -4621,6 +4621,226 @@ public:
             res = max(res, dp[i]);
         }
         return res;
+    }
+};
+```
+
+### [子序列-判断子序列](https://leetcode.cn/problems/is-subsequence/)
+
+给定字符串 **s** 和 **t** ，判断 **s** 是否为 **t** 的子序列。
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i][j]`：以 `s[i-1]`结尾和以`t[j-1]`结尾的字符串，**相同子序列的长度为`dp[i][j]`**
+
+2. 确定递推公式
+
+   存在两种情况
+
+   -  `s[i-1]==t[j-1]` 则 `dp[i][j] = dp[i-1][j-1] + 1`
+   -  `s[i-1]!=t[j-1]` 则 `dp[i][j] = dp[i][j-1]` 因为题目中问的是  **s** 是否为 **t** 的子序列，所以只考虑从 t 中删除元素。
+
+3. dp数组如何初始化
+
+   均初始化为 0. `dp[0][0] = 0`
+
+4. 确定遍历顺序
+
+   正序遍历
+
+   ```cpp
+   class Solution {
+   public:
+       bool isSubsequence(string s, string t) {
+           if(s.size() == 0) return true;
+           vector<vector<int>> dp(s.size() + 1, vector<int>(t.size()+1, 0));
+           dp[0][0] = 0;
+   
+           for(int i = 1;i <= s.size();i++){
+               for(int j = 1; j <= t.size();j++){
+                   if(s[i-1] == t[j-1]){
+                       dp[i][j] = dp[i-1][j-1] + 1;
+                   }else{
+                       dp[i][j] = dp[i][j-1];
+                   }
+                   if(dp[i][j] == s.size()){
+                       return true;
+                   }
+               }
+           }
+   
+           return false;
+       }
+   };
+   ```
+
+
+
+### [子序列-不同的子序列](https://leetcode.cn/problems/distinct-subsequences/)
+
+给定一个字符串 `s` 和一个字符串 `t` ，==计算在 `s` 的子序列中 `t` 出现的个数==。
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i][j]`：`t[0:j-1]`在`s[0:i-1]`中出现的个数为`dp[i][j]`，`s[0:i-1]`可以随便删除元素
+
+2. 确定递推公式
+
+   存在两种情况
+
+   -  `s[i-1]==t[j-1]` 则 `dp[i][j] = dp[i-1][j-1] + dp[i-1][j]` 第二项是指不考虑该相同位，也可以有s子序列中出现t。
+   -  `s[i-1]!=t[j-1]` 则 `dp[i][j] = dp[i-1][j]` 从 s 中删除元素。
+
+3. dp数组如何初始化
+
+   ``dp[i][0] 表示：以i-1为结尾的s可以随便删除元素，出现空字符串的个数。``
+
+   ``那么dp[i][0]一定都是1，因为也就是把以i-1为结尾的s，删除所有元素，出现空字符串的个数就是1。``
+
+   ``再来看dp[0][j]，dp[0][j]：空字符串s可以随便删除元素，出现以j-1为结尾的字符串t的个数。``
+
+   ``那么dp[0][j]一定都是0，s如论如何也变成不了t。``
+
+   ``最后就要看一个特殊位置了，即：dp[0][0] 应该是多少。``
+
+   ``dp[0][0]应该是1，空字符串s，可以删除0个元素，变成空字符串t。``
+
+4. 确定遍历顺序
+
+   正序遍历
+
+```cpp
+class Solution {
+public:
+    int numDistinct(string s, string t) {
+        // 注意这一题 是 在s的子序列中寻找t
+        vector<vector<uint64_t>> dp(s.size() + 1, vector<uint64_t>(t.size()+1, 0));
+        for(int i = 0;i <= s.size();i++) dp[i][0] = 1;
+        
+        for(int j = 1; j <= t.size();j++){
+            for(int i = 1;i <= s.size();i++){
+                if(s[i-1] == t[j-1]){
+                    dp[i][j] = dp[i-1][j-1] + dp[i-1][j];
+                }else{
+                    dp[i][j] = dp[i-1][j]; //// 注意这一题 是 在s的子序列中寻找t, 所以是在s中删除
+                }
+                
+            }
+        }
+
+        return dp.back().back();
+    }
+};
+```
+
+
+
+### [子序列-两个字符串的删除操作](https://leetcode.cn/problems/delete-operation-for-two-strings/)
+
+给定两个单词 `word1` 和 `word2` ，返回使得 `word1` 和 `word2` **相同**所需的**最小步数**。
+
+该题可以转化成 求两个单词的最大相同子序列的长度，两个单词的长度和减去最大相同子序列长度就是所需要的最小步数。
+
+```cpp
+class Solution {
+public:
+    int minDistance(string word1, string word2) {
+        int n1 = word1.size();
+        int n2 = word2.size();
+
+        vector<vector<int>> dp(n1+1, vector<int>(n2+1, 0));
+        int max_len = 0;
+        for(int i = 1;i <= n1;i++){
+            for(int j = 1;j <= n2;j++){
+                if(word1[i-1] == word2[j-1]){
+                    dp[i][j] = dp[i-1][j-1] + 1;
+                }else{
+                    dp[i][j] = max(dp[i][j-1], dp[i-1][j]);
+                }
+                max_len = max(max_len, dp[i][j]);
+            }
+        }
+        cout << max_len <<endl;
+        return (n1 + n2) - (max_len << 1);
+
+    }
+};
+```
+
+
+
+### [编辑距离](https://leetcode.cn/problems/edit-distance/)
+
+给你两个单词 `word1` 和 `word2`， *请返回将 `word1` 转换成 `word2` 所使用的最少操作数* 。
+
+你可以对一个单词进行如下三种操作：
+
+- 插入一个字符
+- 删除一个字符
+- 替换一个字符
+
+
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i][j]`：`word1[0:i-1]`转化成`word2[0:j-1]`中所使用的最少操作数为`dp[i][j]`
+
+2. 确定递推公式
+
+   ```cpp
+   if (word1[i - 1] == word2[j - 1])
+       dp[i][j] = dp[i-1][j-1];
+   if (word1[i - 1] != word2[j - 1])
+       //word1 增加一个字母, 就相当于word2删除一个字母
+       dp[i][j] = dp[i][j-1] + 1;
+       //word1 删
+       dp[i][j] = dp[i-1][j] + 1;
+       //换: word1[i-1]换成与word2[j-1]相同的字母
+       dp[i][j] = dp[i-1][j-1] + 1;
+   ```
+
+   
+
+3. dp数组如何初始化
+
+   ```cpp
+   dp[i][0] = i;
+   dp[0][j] = j;
+   ```
+
+   
+
+4. 确定遍历顺序
+
+   正序遍历
+
+```cpp
+class Solution {
+public:
+    int minDistance(string word1, string word2) {
+        int n1 = word1.size();
+        int n2 = word2.size();
+
+        vector<vector<int>> dp(n1+1, vector<int>(n2+1, 0));
+        for(int i = 0;i <= n1;i++){
+            dp[i][0] = i;
+        }
+        for(int j = 0;j <= n2;j++){
+            dp[0][j] = j;
+        }
+        for(int i = 1;i <= n1;i++){
+            for(int j = 1;j <= n2;j++){
+                if(word1[i-1] == word2[j-1]){
+                    dp[i][j] = dp[i-1][j-1];
+                }else{
+                    dp[i][j] = min(dp[i][j-1], min(dp[i-1][j], dp[i-1][j-1])) + 1;
+                }
+                
+            }
+        }
+
+        return dp[n1][n2];
+
     }
 };
 ```

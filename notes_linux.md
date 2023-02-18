@@ -494,3 +494,104 @@ statbuf: 传出参数，保存文件的信息
 
 
 
+## Linux文件属性操作函数
+
+```c
+int access(const char *pathname, int mode);
+/*
+access()  checks  whether the calling process can access the file pathname.
+pathname: 文件路径
+mode: F_OK tests for the existence of the file.  R_OK, W_OK, and X_OK test whether the file exists and  grants read, write, and execute permissions, respectively.
+返回值: 0-success  -1 -failed
+*/
+
+int chmod(const char *pathname, mode_t mode);
+/*
+改变文件权限 
+mode_t (0665 0777)
+返回值: 0-success  -1 -failed
+*/
+
+int chown(const char *pathname, uid_t owner, gid_t group);
+/*
+改变拥有者
+owner: 用户ID
+group: 组ID
+返回值: 0-success  -1 -failed
+*/
+
+int truncate(const char *path, off_t length);
+/*
+缩减或者扩展文件到指定大小
+path: 文件路径
+length: 文件最终的大小  off_t--long int
+返回值: 0-success  -1 -failed
+int res1 = truncate(filename, 20); 将file的文件大小改成20K。
+*/
+```
+
+## Linux目录操作函数
+
+```c
+int mkdir(const char *pathname, mode_t mode);
+
+int rmdir(const char *pathname);
+
+int rename(const char *oldpath, const char *newpath);
+
+int chdir(const char *path);
+/*
+修改进程工作目录
+*/
+char *getcwd(char *buf, size_t size);
+/*
+返回当前进程工作的绝对路径
+buf: 传出参数，存储的是路径
+size: buf的大小
+返回值: 成功则 指向buf的地址；失败则NULL。
+*/
+
+DIR *opendir(const char *name);
+    
+struct dirent *readdir(DIR *dirp);
+    
+int closedir(DIR *dirp);
+    
+```
+
+
+
+## 一些函数
+
+```c
+int dup(int oldfd);
+/*
+复制文件描述符
+The  dup() system call creates a copy of the file descriptor oldfd, using the lowest-numbered
+       unused file descriptor for the new descriptor.
+返回值为新的文件描述符，指向同一个文件
+*/
+int dup2(int oldfd, int newfd);
+/*
+重定向文件描述符；用newfd去指向oldfd描述的文件。
+The dup2() system call performs the same task as dup(), but instead of using the  lowest-num‐
+       bered  unused file descriptor, it uses the file descriptor number specified in newfd.  If the
+       file descriptor newfd was previously open, it is silently closed before being reused.
+返回值为新的文件描述符，即newfd
+*/
+
+int fcntl(int fd, int cmd, ... /* arg */ );
+/*
+fcntl()  performs  one of the operations described below on the open file descriptor fd.  The
+       operation is determined by cmd.
+
+复制文件描述符 cmd-F_DUPFD
+获取或者修改指定的文件描述符的状态。cmd-F_GETFL  cmd-F_SETFL
+
+*/
+```
+
+
+
+# Linux多进程开发
+
