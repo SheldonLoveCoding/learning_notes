@@ -4799,16 +4799,12 @@ public:
        dp[i][j] = dp[i-1][j-1] + 1;
    ```
 
-   
-
 3. dp数组如何初始化
 
    ```cpp
    dp[i][0] = i;
    dp[0][j] = j;
    ```
-
-   
 
 4. 确定遍历顺序
 
@@ -4844,4 +4840,128 @@ public:
     }
 };
 ```
+
+### [回文子串](https://leetcode.cn/problems/palindromic-substrings/)
+
+给你一个字符串 `s` ，请你统计并返回这个字符串中 **回文子串** 的数目。
+
+```cpp
+class Solution {
+public:
+    int countSubstrings(string s) {
+        // dp[i][j] 表示子字符串 s[i:j]左闭右闭，是否是回文串 
+        vector<vector<bool>> dp(s.size(), vector<bool>(s.size(), false));
+        int res = 0;
+        for(int i = s.size()-1; i >= 0;i--){
+            for(int j = i;j < s.size();j++){
+                if(s[i] != s[j]){
+                    dp[i][j] = false;
+                }else{
+                    if(j - i <= 1){
+                        res++;
+                        dp[i][j] = true;
+                    }else if(dp[i+1][j-1] == true){
+                        dp[i][j] = true;
+                        res++;
+                    }
+                }
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 最长回文子串
+
+==子串是连续的==，求最大回文串代码如下：
+
+```cpp
+class Solution {
+public:
+    string longestPalindrome(string s) {
+        vector<vector<bool>> dp(s.size(), vector<bool>(s.size(), false));
+
+        string res = {};
+        for(int i = s.size()-1; i >= 0; i--){
+            for(int j = i;j < s.size(); j++){// 这里是可以遍历到 i==j的情况的
+                if(s[i] != s[j]){
+                    dp[i][j] = false;
+                }
+                else{
+                    if(j - i <= 1){
+                        res = (res.size() < j-i+1) ? s.substr(i, j-i+1) : res;
+                        dp[i][j] = true;
+                    }
+                    else if(dp[i+1][j-1]){
+                        res = (res.size() < j-i+1) ? s.substr(i, j-i+1) : res;
+                        dp[i][j] = true;
+                    }
+                }
+            }
+        }
+        return res;
+    }
+};
+```
+
+### [最长回文子序列](https://leetcode.cn/problems/longest-palindromic-subsequence/)
+
+给你一个字符串 `s` ，找出其中最长的回文子序列，并返回该序列的长度。子序列定义为：不改变剩余字符顺序的情况下，删除某些字符或者不删除任何字符形成的一个序列。==子序列是不连续的==
+
+本题中，子序列是不连续的。所以dp数组的定义有所不同
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i][j]`：`s[i:j] 的子串中，回文子序列最大长度`
+
+2. 确定递推公式
+
+   ```cpp
+   if (s[i] == s[j])
+       dp[i][j] = dp[i+1][j-1] + 2;
+   if (s[i] != s[j])
+       //如果不同，那么就把s[i] 和 s[j] 分别放入s[i+1, j-1]的子串中看看最大长度是多少
+       dp[i][j] = max(dp[i+1][j], dp[i][j-1]);
+       
+   ```
+
+3. dp数组如何初始化
+
+   由上述分析可知，递推公式是遍历不到 `i == j` 的情况的，所以
+
+   ```cpp
+   for(int i = 0;i < s.size();i++) dp[i][i] = 1;
+   ```
+
+4. 确定遍历顺序
+
+   i 倒序；j 正序
+
+   
+
+```cpp
+class Solution {
+public:
+    int longestPalindromeSubseq(string s) {
+
+        vector<vector<int>> dp(s.size(), vector<int>(s.size(), 0));
+        for(int i = s.size()-1; i >= 0; i--) dp[i][i] = 1;
+
+        for(int i = s.size()-1; i >= 0; i--){
+            for(int j = i+1;j < s.size(); j++){
+                if(s[i] == s[j]){
+                    dp[i][j] = dp[i+1][j-1] + 2;
+                }
+                else{
+                    dp[i][j] = max(dp[i][j-1],dp[i+1][j]);
+                }
+            }
+        }
+        return dp[0][s.size()-1];
+    }
+};
+```
+
+
 
