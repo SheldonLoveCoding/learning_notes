@@ -571,6 +571,7 @@ The  dup() system call creates a copy of the file descriptor oldfd, using the lo
        unused file descriptor for the new descriptor.
 返回值为新的文件描述符，指向同一个文件
 */
+
 int dup2(int oldfd, int newfd);
 /*
 重定向文件描述符；用newfd去指向oldfd描述的文件。
@@ -587,11 +588,69 @@ fcntl()  performs  one of the operations described below on the open file descri
 
 复制文件描述符 cmd-F_DUPFD
 获取或者修改指定的文件描述符的状态。cmd-F_GETFL  cmd-F_SETFL
-
 */
 ```
 
 
 
 # Linux多进程开发
+
+
+
+## 子进程创建
+
+```c
+pid_t fork(void);
+
+/*
+创建子进程，返回值会返回两次，具体内容如下。
+On  success,  the  PID  of the child process is returned in the parent, and 0 is returned in the child.  On failure, -1 is returned in the parent, no child process is created, and errno is set appropriately.
+*/
+
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdio.h>
+
+int main(){
+    //创建子进程
+    pid_t pid = fork(); // 程序再次分叉
+    if(pid > 0){
+        //父进程只执行这里面的代码
+        printf("fork 函数返回值： %d \n", pid);
+        printf("pid: %d, ppid: %d \n", getpid(), getppid());
+        printf("这是父进程\n");
+    }else if(pid == 0){
+        //子进程只执行这里面的代码
+        printf("fork 函数返回值： %d \n", pid);
+        printf("pid: %d, ppid: %d \n", getpid(), getppid());
+        printf("这是子进程\n");
+    }
+    //父子进程共享的代码，父子进程交替运行
+    for(int i = 0; i < 3333;i++){
+        printf("i = %d, pid = %d\n", i, getpid());
+    }
+
+    return 0;
+}
+```
+
+创建子进程之后，子进程会将父进程的 ==用户区== 的虚拟地址空间clone，==内核区除了pid==其余部分也会被clone。但是只是初始的值相同，改变各自进程里的变量的值，并不会影响另一个进程。
+
+此外，fork函数实现的方法是 **读时共享，写时拷贝**，并不是完全复制一份完整的父进程的虚拟地址空间，只是
+
+函数的返回值是在栈空间里的。
+
+## 多进程GDB调试
+
+GDB 默认跟踪父线程，当断点在父线程时，父线程阻塞，子线程正常运行。
+
+两条命令来修改这一属性：
+
+`set follow-fork-mode [parent | child]`  切换跟踪属性，运行到 哪个进程 的断点处阻塞
+
+`set detach-on-fork [on | off]` 调试当前进程时，其他进程是否要等待，off为等待，on不等待。gdb-8.0+ 多线程调试有一点问题
+
+`info inferiors` 查看调试的进程
+
+
 
