@@ -3223,13 +3223,15 @@ public:
 
 ### [无重叠区间](https://leetcode.cn/problems/non-overlapping-intervals/)
 
+给定一个区间的集合 `intervals` ，其中 `intervals[i] = [starti, endi]` 。返回 *需要移除区间的最小数量，使剩余区间互不重叠* 
+
 这个题自己没有思路。
 
 题解思路：按照**右边界排序**，就要**从左向右遍历**，因为右边界越小越好，只要右边界越小，留给下一个区间的空间就越大，所以从左向右遍历，优先选右边界小的。
 
 按照**左边界排序**，就要**从右向左遍历**，因为左边界数值越大越好（越靠右），这样就给前一个区间的空间就越大，所以可以从右向左遍历。
 
-找到非重叠区域的个数，总个数-非重叠区域的个数 == 结果。
+找到非重叠区域的个数，总个数-非重叠区域的个数 == 需要移除的区域。
 
 ```c++
 class Solution {
@@ -4153,6 +4155,67 @@ public:
 };
 ```
 
+### [打家劫舍](https://leetcode.cn/problems/house-robber/)
+
+```cpp
+class Solution {
+public:
+    void printVec(vector<int>& dp){
+        for(auto d:dp){
+            cout << d << " ";
+        }
+        cout << endl;
+    }
+    int rob(vector<int>& nums) {
+        if(nums.size() <= 1) return nums[0];
+        // dp[i] 前i个房子，能够偷窃到的最大金额 
+        vector<int> dp(nums.size(), 0);
+
+        dp[0] = nums[0];
+        dp[1] = max(nums[0], nums[1]);
+        for(int i = 2; i < nums.size(); i++){
+            dp[i] = max(dp[i-2] + nums[i], dp[i-1]);
+        }
+        return dp[nums.size()-1];
+
+    }
+};
+```
+
+
+
+### [打家劫舍 II](https://leetcode.cn/problems/house-robber-ii/)
+
+这个地方所有的房屋都 **围成一圈** 
+
+分成两组来考虑。==偷头 不偷尾==  或者  ==偷尾 不偷头==
+
+```cpp
+class Solution {
+public:
+    int robRange(vector<int>& nums, int start, int end){
+        if(end - start + 1 == 1){
+            return nums[start];
+        }
+        vector<int> dp(end - start + 1, 0);
+        dp[0] = nums[start];
+        dp[1] = max(nums[start], nums[start+1]);
+        for(int i = 2;i < end - start + 1;i++){
+            dp[i] = max(dp[i-1], dp[i-2]+nums[start + i]);
+        }
+        return dp.back();
+    }
+    int rob(vector<int>& nums) {
+        if(nums.size() == 1){
+            return nums[0];
+        }
+        int res1 = robRange(nums, 0, nums.size()-2);
+        int res2 = robRange(nums, 1, nums.size()-1);
+        return max(res1, res2);
+    }
+};
+```
+
 
 
 ### [打家劫舍 III](https://leetcode.cn/problems/house-robber-iii/)（递归+DP）
@@ -4964,4 +5027,195 @@ public:
 ```
 
 
+
+### [灌溉花园的最少水龙头数目](https://leetcode.cn/problems/minimum-number-of-taps-to-open-to-water-a-garden/)
+
+```cpp
+class Solution {
+public:
+    static bool cmp(pair<int, int>& a, pair<int, int>& b){
+        return a.first < b.first;
+    }
+    int minTaps(int n, vector<int>& ranges) {
+        vector<pair<int, int>> range;
+        //截断到有效区间
+        for(int i = 0; i < ranges.size(); i++){
+            int start = max(0, i-ranges[i]);
+            int end = min(n, i+ranges[i]);
+            range.push_back(make_pair(start, end));
+        }
+        //根据起点排序
+        sort(range.begin(), range.end(), cmp);
+        // [0:i] 左闭右闭 用到的最少水龙头数目
+        vector<int> dp(n+1, INT_MAX);
+        dp[0] = 0;
+
+        for(int i = 0;i <= n;i++){
+            int start = range[i].first;
+            int end = range[i].second;
+            if(dp[start] == INT_MAX){
+                return -1;
+            }
+            for(int j = start; j <= end;j++){
+                dp[j] = min(dp[j], dp[start] + 1);
+            }
+            
+        }
+
+        return dp[n];
+    }
+};
+```
+
+
+
+### [博弈类DP - 石子游戏](https://leetcode.cn/problems/stone-game/)
+
+- [x] 石子游戏
+- [x] 石子游戏 II
+- [ ] 石子游戏 III
+- [ ] 猜数字大小 II
+- [ ] 我能赢吗
+- [ ] 预测赢家
+- [ ] 除数博弈
+
+Alice 和 Bob 用几堆石子在做游戏。一共有==偶数堆石子==，**排成一行**；每堆都有 **正** 整数颗石子，数目为 `piles[i]` 。
+
+游戏以谁手中的石子最多来决出胜负。石子的 **总数** 是 **奇数** ，所以没有平局。
+
+Alice 和 Bob 轮流进行，**Alice 先开始** 。 每回合，玩家从行的 **开始** 或 **结束** 处取走整堆石头。 这种情况一直持续到没有更多的石子堆为止，此时手中 **石子最多** 的玩家 **获胜** 。
+
+假设 Alice 和 Bob 都发挥出最佳水平，当 Alice 赢得比赛时返回 `true` ，当 Bob 赢得比赛时返回 `false` 。
+
+```cpp
+class Solution {
+public:
+    bool stoneGame(vector<int>& piles) {
+        int n = piles.size();
+        // 从[i:j]范围内按规定选择石头，使得这一轮（双方各拿一次）当前玩家比对方玩家多拿的石头
+        vector<vector<int>> dp(n, vector<int>(n, 0));
+
+        for(int i = 0;i < n;i++){
+            dp[i][i] = piles[i];
+        }
+        for(int i = n-2; i >= 0;i--){
+            for(int j = i+1;j < n;j++){ // j>i才有意义
+                // 	     本局玩家拿piles[i]
+                dp[i][j] = max(piles[i] - dp[i+1][j], piles[j] - dp[i][j-1]);
+                //					下一局对方玩家给本局玩家的伤害
+                // 所以是相减
+            }
+        }
+        return dp[0][n-1] > 0 ? true : false;
+
+    }
+};
+```
+
+
+
+### [博弈类DP-石子游戏 II](https://leetcode.cn/problems/stone-game-ii/)
+
+```cpp
+class Solution {
+public:
+    int stoneGameII(vector<int>& piles) {
+        int n = piles.size();
+
+        vector<vector<int>> dp(n + 1, vector<int>(n+1, INT_MIN));
+
+        for(int i = n;i >= 0;i--){
+            for(int m = 1; m <= n;m++){
+                if(i == n){
+                    dp[i][m] = 0;
+                }
+                else{
+                    int sum = 0;
+                    for(int x = 1; x <= 2*m; x++){
+                        if(i+x > n) break;
+                        sum += piles[i+x-1];
+                        dp[i][m] = max(dp[i][m], sum - dp[i+x][min(n, max(x, m))]);
+                      
+                    }
+                }
+                
+            }
+        }
+        return (dp[0][1] + accumulate(piles.begin(), piles.end(), 0)) >> 1;
+
+    }
+};
+```
+
+### [石子游戏 III](https://leetcode.cn/problems/stone-game-iii/)
+
+Alice 和 Bob 用几堆石子在做游戏。几堆石子排成一行，每堆石子都对应一个得分，由数组 `stoneValue` 给出。
+
+Alice 和 Bob 轮流取石子，**Alice** 总是先开始。在每个玩家的回合中，该玩家可以拿走剩下石子中的的前 **1、2 或 3 堆石子** 。比赛一直持续到所有石头都被拿走。
+
+每个玩家的最终得分为他所拿到的每堆石子的对应得分之和。每个玩家的初始分数都是 **0** 。比赛的目标是决出最高分，得分最高的选手将会赢得比赛，比赛也可能会出现平局。
+
+假设 Alice 和 Bob 都采取 **最优策略** 。如果 Alice 赢了就返回 *"Alice"* *，*Bob 赢了就返回 *"Bob"，*平局（分数相同）返回 *"Tie"* 。
+
+
+
+1. 确定dp数组（dp table）以及下标的含义
+
+   `dp[i]`：`在剩余[i:n-1]堆的石子中（本局局面），我方玩家可以得到的最多石子数`
+
+2. 确定递推公式
+
+   - 如果本局玩家拿一堆，那么对方玩家==在下一局的局面上==就可以最多拿到`dp[i+1]`个石子，那么==在下一局的局面上==留给我方玩家的石子就是 `sum(stoneValue[i+1:n-1]) - dp[i+1]`，再加上==本局上==本轮玩家拿到的是`sum(stoneValue[i:i])`，所以在==本局局面上==，如果我方只拿一堆，那么我方玩家的最多可以拿到的石子数`dp[i] = sum(stoneValue[i:i]) + sum(stoneValue[i+1:n-1]) - dp[i+1] = sum(stoneValue[i, n-1]) - dp[i+1] `
+   - 同理 拿两堆， `dp[i] = sum(stoneValue[i, n-1]) - dp[i+2] `
+   - 同理 拿三堆， `dp[i] = sum(stoneValue[i, n-1]) - dp[i+3] `
+
+   取上面三个的==最大值==。
+
+3. dp数组如何初始化
+
+   dp[n] = 0;
+
+4. 确定遍历顺序
+
+   i 倒序，因为公式中会用到 i+1
+
+
+
+```cpp
+class Solution {
+public:
+    string stoneGameIII(vector<int>& stoneValue) {
+        int n = stoneValue.size();
+        //后缀和
+        vector<int> suffix_sum(n, 0);
+        suffix_sum[n-1] = stoneValue[n-1];
+        for(int i = n-2;i >= 0;i--){
+            suffix_sum[i] = suffix_sum[i+1] + stoneValue[i];
+        }
+
+        vector<int> dp(n+1, 0);
+        dp[n] = 0;
+        for(int i = n-1; i >= 0; i--){
+            //要注意这里stoneValue并不是全是正数，所以不能在这里把 n-3 到 n-1的dp值直接赋值为suffix_sum,也就是说不是直接全拿
+            //找最小值
+            int minJ = dp[i+1];
+            for(int j = i+2; j <= n && j <=i+3;j++){
+                minJ = min(minJ, dp[j]);
+            }
+            dp[i] = suffix_sum[i] - minJ;
+            
+        }
+
+
+        if(suffix_sum[0] - dp[0] > dp[0]){
+            return "Bob";
+        }else if(suffix_sum[0] - dp[0] < dp[0]){
+            return "Alice";
+        }else{
+            return "Tie";
+        }
+
+    }
+};
+```
 
