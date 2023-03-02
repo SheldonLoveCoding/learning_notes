@@ -1,3 +1,87 @@
+# 数组
+
+### [在排序数组中查找元素的第一个和最后一个位置](https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/)
+
+**体会二分查找的方法，注意循环不变量**
+
+```cpp
+class Solution {
+public:
+    vector<int> searchRange(vector<int>& nums, int target) {
+        if(nums.size() == 0) return {-1,-1};
+        int len = nums.size();
+        vector<int> res(2, -1);
+        //计算右边界
+        int rBoard = -100;
+        int left = 0, right = nums.size()-1;
+        while(left <= right){
+            int mid = left +  ((right - left) >> 1);
+            if(nums[mid] > target){
+                right = mid - 1;
+            }else{
+                left = mid + 1;
+                rBoard = left;
+            }
+        }
+        
+        //计算左边界
+        int lBoard = -100;
+        left = 0; right = nums.size()-1;
+        while(left <= right){
+            int mid = left +  ((right - left) >> 1);
+            if(nums[mid] >= target){
+                right = mid - 1;
+                lBoard = right;
+            }else{
+                left = mid + 1;
+            }
+        }
+
+        if(lBoard == -100 || rBoard == -100){
+            return {-1,-1};
+        }
+        if(rBoard - lBoard > 1){
+            return {lBoard+1, rBoard-1};
+        }
+
+        return {-1,-1};
+    }
+};
+```
+
+### [搜索插入位置](https://leetcode.cn/problems/search-insert-position/)
+
+给定一个排序数组和一个目标值，在数组中找到目标值，并返回其索引。如果目标值不存在于数组中，返回它将会被按顺序插入的位置。
+
+请必须使用时间复杂度为 `O(log n)` 的算法。
+
+```cpp
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+        int size = nums.size();
+        int left = 0, right = size - 1;
+        int res = -100; //左边界
+        while(left <= right){
+            int mid = left + ((right - left) >> 1);
+            if(nums[mid] >= target){
+                right = mid - 1;
+                res = right;
+            }else{
+                left = left + 1;
+            }
+        }
+        if(res == -100){
+            return left;
+        }else{
+            return res + 1;
+        }
+    }
+};
+```
+
+
+
 # 链表
 
 ## 链表相交
@@ -142,6 +226,14 @@ public:
 | `string& insert (size_t pos, const string& str);`          | 插入字符串。pos 表示要插入的位置，也就是下标，是标量；str 表示要插入的字符串，它可以是 string 字符串，也可以是C风格的字符串。 |
 | `string& erase (size_t pos = 0, size_t len = npos);`       | 删除字符串某元素。pos 表示要删除的子字符串的起始下标，len 表示要删除子字符串的长度。如果不指明 len 的话，那么直接删除从 pos 到字符串结束处的所有字符（此时 len = str.length - pos） |
 | `string substr (size_t pos = 0, size_t len = npos) const;` | 提取子字符串。pos 为要提取的子字符串的起始下标，len 为要提取的子字符串的长度。 |
+
+### 二进制数转字符串
+
+二进制数转字符串。给定一个介于0和1之间的实数（如0.72），类型为double，打印它的二进制表达式。如果该数字无法精确地用32位以内的二进制表示，则打印“ERROR”。
+
+`将实数的十进制表示转换成二进制表示的方法是：每次将实数乘以 2，将此时的整数部分添加到二进制表示的末尾，然后将整数部分置为 0，重复上述操作，直到小数部分变成 0 或者小数部分出现循环时结束操作。当小数部分变成 0 时，得到二进制表示下的有限小数；当小数部分出现循环时，得到二进制表示下的无限循环小数。`
+
+
 
 ## KMP算法
 
@@ -3456,6 +3548,85 @@ public:
 };
 ```
 
+### [交换字符使得字符串相同](https://leetcode.cn/problems/minimum-swaps-to-make-strings-equal/)
+
+有两个长度相同的字符串 `s1` 和 `s2`，且它们其中 **只含有** 字符 `"x"` 和 `"y"`，你需要通过「交换字符」的方式使这两个字符串相同。
+
+每次「交换字符」的时候，你都可以在两个字符串中各选一个字符进行交换。
+
+交换只能发生在两个不同的字符串之间，绝对不能发生在同一个字符串内部。也就是说，我们可以交换 `s1[i]` 和 `s2[j]`，但不能交换 `s1[i]` 和 `s1[j]`。
+
+最后，请你返回使 `s1` 和 `s2` 相同的最小交换次数，如果没有方法能够使得这两个字符串相同，则返回 `-1` 。
+
+
+
+分析：利用 变量 xy 和 yx 分别代表 `s1[i]!=s2[i]` 的两种情况出现的次数。
+
+情况一：
+
+x  x
+
+y   y
+
+需要交换一次就可以，变成了
+
+x   y
+
+x   y
+
+就会让 **xy 或 yx** 变量值减2；
+
+情况二：
+
+x   y
+
+y   x
+
+需要交换两次，变成了
+
+x   y
+
+x   y
+
+就会让 **xy 和 yx** 变量值**同时**减1；
+
+
+
+贪心算法：优先考虑交换成本小的情况一，直到xy和yx都变为0； 
+
+```cpp
+class Solution {
+public:
+    int minimumSwap(string s1, string s2) {
+        
+        int xy = 0, yx = 0;
+        for(int i = 0;i < s1.size();i++){
+            if(s1[i] == 'x' && s2[i] == 'y'){
+                xy += 1;
+            }else if(s1[i] == 'y' && s2[i] == 'x'){
+                yx += 1;
+            }
+        }
+
+        int res = 0;
+        if((xy + yx) % 2 != 0){
+            return -1;
+        }
+		//情况一
+        res += (xy % 2 + yx % 2);
+        //情况二
+        xy = xy / 2;
+        yx = yx / 2;
+        res += (xy + yx);
+
+        return res;
+
+    }
+};
+```
+
+
+
 # 动态规划
 
 ## 基础理论
@@ -5073,7 +5244,7 @@ public:
 
 - [x] 石子游戏
 - [x] 石子游戏 II
-- [ ] 石子游戏 III
+- [x] 石子游戏 III
 - [ ] 猜数字大小 II
 - [ ] 我能赢吗
 - [ ] 预测赢家
@@ -5218,4 +5389,14 @@ public:
     }
 };
 ```
+
+
+
+
+
+## 单调栈
+
+什么时候用单调栈呢？
+
+**通常是一维数组，要寻找任一个元素的右边或者左边第一个比自己大或者小的元素的位置，此时我们就要想到可以用单调栈了**。时间复杂度为O(n)。
 

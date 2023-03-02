@@ -574,7 +574,8 @@ The  dup() system call creates a copy of the file descriptor oldfd, using the lo
 
 int dup2(int oldfd, int newfd);
 /*
-重定向文件描述符；用newfd去指向oldfd描述的文件。
+重定向文件描述符；用newfd去指向oldfd描述的文件。将newfd重定向到oldfd
+
 The dup2() system call performs the same task as dup(), but instead of using the  lowest-num‐
        bered  unused file descriptor, it uses the file descriptor number specified in newfd.  If the
        file descriptor newfd was previously open, it is silently closed before being reused.
@@ -588,6 +589,10 @@ fcntl()  performs  one of the operations described below on the open file descri
 
 复制文件描述符 cmd-F_DUPFD
 获取或者修改指定的文件描述符的状态。cmd-F_GETFL  cmd-F_SETFL
+设置文件描述符为非阻塞:
+int flags = fcntl(fd, F_GETFL);
+flags |= O_NONBLOCK;
+fcntl(fd, F_SETFL, flags);
 */
 ```
 
@@ -762,3 +767,266 @@ WNOHANG  非阻塞
 通知事件：一个进程需要向另一个或一组进程发送消息，通知它 (它们) 发生了某种事件(如进程终止时要通知父进程)
 资源共享：多个进程之间共享同样的资源。为了做到这一点，需要内核提供互斥和同步机制。
 进程控制：有些进程希望完全控制另一个进程的执行(如 Debug 进程)，此时控制进程希望能够拦截另一个进程的所有陷入和异常，并能够及时知道它的状态改变。
+
+## 匿名管道（pipe）
+
+匿名管道是IPC的最古老的方式。
+
+管道的特点：
+
+1. 管道其实是一个在内核内存中维护的缓冲器，这个缓冲器的存储能力是有限的，不同的操作系统大小不一定相同；
+
+2. 管道拥有文件的特质：读操作、写操作。管道两端分别对应一个文件描述符。匿名管道没有文件实体，有名管道有文件实体但不存储数据。可以按照操作文件的方式对管道进行操作。
+
+3. 一个管道是一个字节流，使用管道时不存在消息或者消息边界的概念，从管道读取数据的进程可以读取任意大小的数据块，而不管写入进程写入管道的数据块的大小是多少。
+
+4. 通过管道传递的数据是==顺序==的，从管道中读取出来的字节的顺序和它们被写入管道的顺序是==完全一样==的。
+
+5. 在管道中的数据的==传递方向是单向的==，==一端用于写入，一端用于读取，管道是半双工的==
+
+6. 从管道读数据是一次性操作，数据一旦被读走，它就从管道中被抛弃，释放空间以便写更多的数据，在管道中无法使用 lseek() 来随机的访问数据。
+
+7. 匿名管道只能在==具有公共祖先的进程==(父进程与子进程，或者两个兄弟进程，具有亲缘关系) 之间使用。
+
+8. 管道的数据结构是循环队列。也就是因为这样，才对应了特点6，读完数据之后就留出了空间交给写操作了。
+
+   <img src=".\asset\管道的数据结构.png" alt="管道的数据结构" style="zoom:50%;" />
+
+
+
+```c
+#include <unistd.h>
+
+int pipe(int pipefd[2]);
+/*
+用于创建管道，进行进程间的通信。
+pipe() creates a pipe, a unidirectional data channel that can be used for inter‐
+       process communication.  The array pipefd is used to return two file  descriptors
+       referring  to  the  ends  of  the pipe.  pipefd[0] refers to the read end of the
+       pipe.  pipefd[1] refers to the write end of the pipe.  
+pipefd[2]是传出参数，表示读写两端的文件描述符
+返回值 成功-0 失败- -1
+
+管道默认是阻塞的,
+*/
+```
+
+管道读写的特点：使用管道时，需要注意以下几种特殊的情况(假设都是==阻塞I/O操作==)
+
+1. 所有的==指向管道写端的文件描述符都关闭了==(管道写端引用计数为0)，==有进程从管道的读端读数据==，那么管道中==剩余的数据==被读取以后，==再次read会返回0==，就像读到文件末尾一样。
+2. 如果有==指向管道写端的文件描述符没有关闭==(管道的写端引用计数大于0) ，而==持有管道写端的进程也没有往管道中写数据==，这个时候有进程从管道中读取数据，那么==管道中剩余的数据被读取之后，再次read会阻塞==，直到管道中有数据可以读了才读取数据并返回。
+3. 如果所有==指向管道读端的文件描述符都关闭了==(管道的读端引用计数为0)，这个时候有进程向管道中==写数据==，那么该进程会收到一个信号SIGPIPE，通常会导致进程异常终止。
+4. 如果有==指向管道读端的文件描述符没有关闭==(管道的读端引用计数大于0) ，而==持有管道读端的进程也没有从管道中读数据==，这时有进程向管道中写数据，那么==在管道被写满的时候再次write会直到管道中有空位置才能再次写入数据并返回==。
+
+## 有名管道(FIFO)
+
+匿名管道，由于没有名字，只能用于亲缘关系的进程间通信。为了克服这个缺点，提出了有名管道 (FIFO)，也叫命名管道、FIFO文件。
+
+有名管道 (FIFO)不同于匿名管道之处在于==它提供了一个路径名与之关联，以 FIFO的文件形式存在于文件系统中==，并且其打开方式与打开一个普通文件是一样的，这样即使与 FIFO的创建进程不存在亲缘关系的进程，只要可以访问该路径，就能够彼此通过 FIFO 相互通信，因此，通过 FIFO 不相关的进程也能交换数据一旦打开了 FIFO，就能在它上面使用与操作匿名管道和其他文件的系统调用一样的I/O系统调用了 (如read()、write()和close()) 。与管道样，FIFO也有一个写入端和读取端，并且==从管道中读取数据的顺序与写入的顺序是一样的==。FIFO的名称也由此而来:先入先出。
+
+有名管道 (FIFO)和匿名管道 (pipe) 有一些特点是相同的，不一样的地方在于
+
+1. FIFO在文件系统中作为一个特殊文件存在，但 FIFO 中的内容却存放在内存中，所以看到的FIFO文件的数据大小为0
+2. 当使用 FIFO的进程退出后，FIFO 文件将继续保存在文件系统中以便以后使用
+3. FIFO 有名字，不相关的进程可以通过打开有名管道进行通信
+
+
+
+```c
+int mkfifo(const char *pathname, mode_t mode);
+```
+
+有名管道注意事项：
+
+1. 一个为只写打开的管道会阻塞，直到另一个进程 以读打开管道
+
+2. 一个为只读打开的管道会阻塞，直到另一个进程 以写打开管道
+
+3. 读管道：管道中有数据，read返回实际读到的字节数。
+
+   ​               管道中无数据：管道写端被全部关闭，read返回0，（相当于读到文件末尾）；写端没有全部被关闭，read阻塞等待
+
+4. 写管道：管道读端全部关闭，程序异常终止 SIGPIPE
+
+   ​				管道读端没有全部关闭：管道已满，则阻塞；管道没有满，写入数据并返回写入的数据字节数。
+
+## 内存映射
+
+### 页表
+
+页表是记录虚拟内存地址和物理内存地址之间的映射关系的一张表。以32位系统为例，虚拟地址空间大小为$2^{32} bytes$，即4GB，也就是需要记录$2^{32} $个映射关系。
+
+分页即将内存划分为固定长度的单元，每个单元就是一页（通常操作系统的使用的页大小是4KB。）。对于虚拟地址空间，分页机制将地址空间分割成固定大小的单元，每个单元称为一页。对于物理地址空间，物理内存被抽象成固定大小的单元，每个单元称为页帧(frame)。==分页机制的核心就是虚拟页号（VPN）到物理页帧号（PFN）的映射==。而==VPN到PFN的映射关系是通过**页表**记录的==。MMU通过页表记录的映射关系完成VPN到PFN的转换，即找到了页表就找到了物理地址。
+
+页表存储在物理内存中，
+
+https://zhuanlan.zhihu.com/p/458935522
+
+
+
+### 函数说明
+
+```c
+void *mmap(void *addr, size_t length, int prot, int flags,
+                  int fd, off_t offset);
+/*
+    - 功能：将文件或设备的数据映射到虚拟内存中；
+    - 参数：addr：映射的首地址，建议为 NULL（由内核指定）
+            length：要映射的数据的长度，建议使用文件的长度，不能为0，
+                    如果length少于分页的长度，则自动分配一个分页的大小。
+            获取文件长度方法：stat lseek
+            prot：内存的操作权限。
+                PROT_EXEC  Pages may be executed.
+                PROT_READ  Pages may be read.
+                PROT_WRITE Pages may be written.
+                PROT_NONE  Pages may not be accessed.
+                要操作内存区，必须拥有读权限。
+            flags：
+                MAP_SHARED 映射区的数据会自动和磁盘文件进行同步，进程间
+                通信必须设置这个权限。
+                MAP_PRIVATE 私人映射，不同步，映射区数据改变，文件数据不改变。
+                写时拷贝。
+                MAP_ANONYMOUS 匿名映射，不需要文件示例作
+            fd：需要映射的文件的文件描述符，通过open得到。
+                文件大小不能为0.
+                open的指定的权限不能与port有冲突。
+            offset：偏移量，一般不用，必须指定的是4k的整数倍，0表示不偏移。
+*/
+
+int munmap(void *addr, size_t length);
+/*
+    - 功能：释放内存映射；
+    - 参数：addr 指向映射区的指针
+            length 要释放的数据的长度
+*/
+```
+
+### 注意事项
+
+1. 如果对mmap的返回值(ptr)做++操作(ptr++)，munmap是否能够成功？
+
+可以进行++操作，但是在释放的时候不能正确释放了。在释放的时候需要传入首地址。
+
+2. 如果open时O_RDONLY，mmap时prot参数指定PROT_READ|PROT_WRITE会怎样？
+
+会产生错误，并返回 MAP_FAILED；
+
+3. 如果文件偏移量为1000会怎样?
+
+偏移量必须是1024的整数倍。
+
+4. mmap什么情况下会调用失败?
+
+- 第二个参数 len == 0;
+- 第三个参数没有 PORT_READ
+- 第五个参数的fd 是在 O_RDONLY 或 O_WRONLY 情况下open的
+
+5. 可以open的时候O_CREAT一个新文件来创建映射区吗?
+
+可以，但是新文件的大小不能为0。
+
+6. mmap后关闭文件描述符，对mmap映射有没有影响?
+
+没有影响
+
+7. 对ptr越界操作会怎样?
+
+越界操作操作的是非法内存，会产生段错误。
+
+
+
+## 信号
+
+信号是 Linux进程间通信的最古老的方式之一，是事件发生时对进程的通知机制，有时也称之为软件中断，它是在软件层次上对中断机制的一种模拟，是一种异步通信的方式。
+
+信号可以导致一个正在运行的进程被另一个正在运行的异步进程中断，转而处理某一个突发事件发往进程的诸多信号，通常都是源于内核。引发内核为进程产生信号的各类事件如下:
+
+- 对于前台进程，用户可以通过输入特殊的终端字符来给它发送信号。比如输入ctrl+C通常会给进程发送一个中断信号。
+- 硬件发生异常，即硬件检测到一个错误条件并通知内核，随即再由内核发送相应信号给相关进程。比如执行一条异常的机器语言指令，诸如被 0 除，或者引用了无法访问的内存区域。
+- 系统状态变化，比如 alarm 定时器到期将引起 SIGALRM 信号，进程执行的 CPU时间超限，或者该进程的某个子进程退出
+- kill命令
+
+使用信号的两个主要目的：
+
+- 让进程知道已经发生了一个特定的事情
+- 强迫进程执行它自己代码中的信号处理程序
+
+信号的特点：
+
+- 简单
+- 不能携带大量信息
+- 满足某个特定条件才发送
+- 优先级比较高
+
+查询信号：`kill -l`，`man 7 signal`
+
+
+
+### 函数说明
+
+```c
+int kill(pid_t pid, int sig);
+/*
+功能:给任何的进程或者进程组pid，发送任何的信号 sig
+参数:
+- pid :
+> 0 : 将信号发送给指定的进程
+= 0 : 将信号发送给当前的进程组
+= -1 : 将信号发送给每一个有权限接收这个信号的进程
+<-1 : 这个pid=某个进程组的ID取反 (-12345)
+sig : 需要发送的信号的编号或者是宏值，0表示不发送任何信号
+*/
+int raise(int sig);
+/*
+功能:给当前进程发送信号 sig
+参数:
+sig : 需要发送的信号的编号或者是宏值，0表示不发送任何信号
+*/
+void abort(void);
+/*
+功能:给当前进程发送信号SIGABRT，杀死当前进程
+sig : 需要发送的信号的编号或者是宏值，0表示不发送任何信号
+*/
+unsigned int alarm(unsigned int seconds);
+/*
+功能：设置长度为seconds的定时器
+seconds到期之后发送SIGALRM的信号，如果seconds为0，表示定时器无效。
+重复调用，前者失效。
+返回值：
+	-之前没有定时器，返回0
+	-之前有定时器，返回之前定时器剩余时间
+不阻塞
+*/
+int setitimer(int which, const struct itimerval *new_value,struct itimerval *old_value);
+/*
+功能：周期设置定时器
+参数：
+-which: 定时器统计的是哪种时间。
+	 ITIMER_REAL 真实时间    This  timer  counts  down  in real (i.e., wall clock)
+                      time.  At each expiration, a SIGALRM signal is gener‐
+                      ated.
+
+     ITIMER_VIRTUAL 用户时间 This timer counts down against the user-mode CPU time
+                      consumed by the process.  (The  measurement  includes
+                      CPU time consumed by all threads in the process.)  At
+                      each expiration, a SIGVTALRM signal is generated.
+
+     ITIMER_PROF  内核+用户时间  This timer counts down against the total (i.e.,  both
+                      user  and  system)  CPU time consumed by the process.
+                      (The measurement includes CPU time  consumed  by  all
+                      threads  in the process.)  At each expiration, a SIG‐
+                      PROF signal is generated.
+
+	struct itimerval {
+    	struct timeval it_interval; // Interval for periodic timer 
+        struct timeval it_value;    // Time until next expiration 
+    };
+	每隔it_interval设置it_value长度的定时器
+    struct timeval {
+    	time_t      tv_sec;         // seconds 
+        suseconds_t tv_usec;        // microseconds 
+    };
+不阻塞
+*/
+```
+
