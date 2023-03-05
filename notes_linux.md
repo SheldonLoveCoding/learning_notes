@@ -1030,3 +1030,162 @@ int setitimer(int which, const struct itimerval *new_value,struct itimerval *old
 */
 ```
 
+### 信号集
+
+许多信号相关的系统调用都需要能表示一组不同的信号，多个信号可使用一个称之为**信号集**的数据结构来表示，其系统数据类型为 **sigset t**。
+
+在 PCB 中有两个非常重要的信号集。一个称之为“阻塞信号集”，另一个称之为未决信号集”。这两个信号集都是内核使用位图机制来实现的。但操作系统不允许我们直接对这两个信号集进行位操作。而需自定义另外一个集合，借助信号集操作函数来对 PCB中的这两个信号集进行修改。
+
+信号的“未决”是一种状态，指的是从信号的产生到信号被处理前的这一段时间
+
+信号的“阻塞”是一个开关动作，指的是阻止信号被处理，但不是阻止信号产生信号的阻塞就是让系统暂时保留信号留待以后发送。
+
+由于另外有办法让系统忽略信号所以一般情况下信号的阻塞只是暂时的，只是为了防止信号打断敏感的操作。
+
+### 利用SIGCHLD信号解决僵尸进程的问题
+
+在正常情况下，父进程在执行过程中会调用`wait(pid)`来回收子进程的资源。但是如果子进程结束了，父进程并没有回收该子进程的资源，这样就会造成僵尸进程。但是由于子进程结束时会向父进程提供`SIGCHLD`信号，父进程默认忽略该信号，我们可以考虑捕捉该信号，在该信号的信号处理函数中去调用`wait(pid)`来回收子进程的资源。
+
+用到的信号捕捉函数为
+
+```c
+ #include <signal.h>
+
+int sigaction(int signum, const struct sigaction *act,
+                     struct sigaction *oldact);
+-参数：signum specifies the signal and can  be  any  valid  signal  except  SIGKILL  and
+       SIGSTOP.
+    
+    act：这个结构体中会定义回调函数
+    oldact：一般为NULL   
+
+```
+
+```c
+/*
+SIGCHLD产生的三个条件：
+    1. 子进程结束了
+    2. 子进程暂停了
+    3. 子进程继续运行了
+*/
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+
+void myaction(int num){
+    printf("捕捉到信号：%d, pid=%d\n", num, getpid());
+    //wait(NULL);
+    while(1){
+        int ret = waitpid(-1, NULL, WNOHANG);
+        if(ret > 0){
+            printf("child process %d died\n", ret);
+        }else if(ret == 0){
+            //说明还有未结束的子进程
+            break;
+        }else if(ret == -1){
+            break;
+        }
+    }
+}
+
+int main(){
+
+    //创建五个子进程
+    pid_t pid;
+    for(int i = 0;i < 5;i++){
+        pid = fork();
+        if(pid == 0){
+            break;
+        }
+    }
+
+    if(pid > 0){
+        struct sigaction act;
+        act.sa_flags = 0;
+        act.sa_handler = myaction;
+        sigemptyset(&act.sa_mask);
+
+        sigaction(SIGCHLD, &act, NULL);
+
+        while(1){
+            printf("parent process pid %d:\n", getpid());
+            sleep(1);
+        }
+        
+    }else if(pid == 0){
+        //sleep(5);
+        printf("child process pid %d:\n", getpid());
+    }
+
+    return 0;
+}
+```
+
+
+
+## 共享内存
+
+共享内存允许两个或者多个进程==共享物理内存的同一块区域==(通常被称为段)。由于个共享内存段会称为一个进程用户空间的一部分，因此这种 IPC 机制无需内核介入。所有需要做的就是让一个进程将数据复制进共享内存中，并且这部分数据会对其他所有共享同一个段的进程可用。
+
+与管道等要求发送进程将数据从**用户空间的缓冲区复制进内核内存**和**接收进程将数据从内核内存复制进用户空间的缓冲区**的做法相比，这种 IPC 技术的速度更快。
+
+### 函数使用
+
+- 调用 shmget() 创建一个新共享内存段或取得一个既有共享内存段的标识符 (即由其他进程创建的共享内存段)。这个调用将返回后续调用中需要用到的共享内存标识符。**创建共享内存段或获取共享内存段**
+
+  ```
+  int shmget(key_t key, size_t size, int shmflg);
+  功能: 创建一个新的共享内存段，或者获取一个既有的共享内存段的标识。
+  新创建的内存段中的数据都会被初始化为0
+  参数:
+      - key : key_t类型是一个整形，通过这个找到或者创建一个共享内存。一般使用16进制表示，非0值
+      - size: 共享内存的大小
+      - shmflg: 共享内存的属性
+      		IPC_CREAT | IPC_EXEC | 0664
+  返回值:
+  	-1 失败
+  	>0 内存段的id
+  ```
+
+  
+
+- 使用 shmat() 来附上共享内存段，即使该段成为调用进程的虚拟内存的一部分此刻在程序中可以像对待其他可用内存那样对待这个共享内存段。为引用这块共享内存程序需要使用由 shmat() 调用返回的 addr 值，它是一个指向进程的虚拟地址空间中该共享内存段的起点的指针。**将共享内存段与进程联系起来**
+
+  ```
+  void *shmat(int shmid, const void *shmaddr, int shmflg);
+  shmid：共享内存段id
+  shmaddr：链接共享内存段的起始地址，一般为NULL，由内核指定
+  shmflg：
+  	读：SHM_RDONLY
+  	读写：0
+  返回值 共享内存首地址
+  ```
+
+  
+
+- 调用 shmdt()来分离共享内存段。在这个调用之后，进程就无法再引用这块共享内存了。这一步是可选的，并且在进程终止时会自动完成这一步。**将共享内存段与进程解除联系**
+
+  ```
+  int shmdt(const void *shmaddr);
+  shmaddr：链接共享内存段的起始地址，一般为NULL，由内核指定
+  返回值 0 1
+  ```
+
+  
+
+- 用shmctl()来获取共享内存段状态。主要用于删除。只有当当前**所有附加内存段的进程都与之分离之后内存段才会销毁**。只有一个进程需要执行这一步。**删除共享内存段**
+
+  ```
+  int shmctl(int shmid, int cmd, struct shmid_ds *buf);
+  shmid：共享内存段id
+  cmd：IPC_STAT：获取状态，将状态写入到buf中
+  	IPC_SET：将buf中的状态设置到内存段中
+  	IPC_RMID：删除共享内存段
+  ```
+
+  
+
