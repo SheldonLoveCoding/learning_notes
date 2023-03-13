@@ -1561,6 +1561,68 @@ public:
 };
 ```
 
+## [求根节点到叶节点数字之和](https://leetcode.cn/problems/sum-root-to-leaf-numbers/)
+
+不用记录完整的path，而是直接进行求和运算。
+
+```cpp
+/**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+
+    vector<int> pathSum;
+
+    int sumVector(vector<int>& path){
+        int summ = 0;
+        for(int p:path){
+            summ += p;
+        }
+        return summ;
+    }
+    void backTrack(TreeNode* cur, int num){
+
+
+        num = num*10 + cur->val;
+        if(cur->left == nullptr && cur->right == nullptr){
+            cout << num << endl;
+            pathSum.push_back(num);
+            return;
+        }
+
+        if(cur->left){
+            backTrack(cur->left, num);
+            
+        }
+        if(cur->right){
+            backTrack(cur->right, num);
+            
+        }
+        
+
+    }
+    int sumNumbers(TreeNode* root) {
+        int num = 0;
+
+        pathSum.clear();
+        backTrack(root, num);
+        return sumVector(pathSum);
+
+    }
+};
+```
+
+
+
 ## [从中序与后序遍历序列构造二叉树](https://leetcode.cn/problems/construct-binary-tree-from-inorder-and-postorder-traversal/)
 
 **中序数组大小一定是和后序数组的大小相同的（这是必然），这也是用以切割后序数组方法。**
@@ -5394,9 +5456,88 @@ public:
 
 
 
-## 单调栈
+# 单调栈
 
 什么时候用单调栈呢？
 
 **通常是一维数组，要寻找任一个元素的右边或者左边第一个比自己大或者小的元素的位置，此时我们就要想到可以用单调栈了**。时间复杂度为O(n)。
+
+
+
+# 排序方法（快速排序与堆排序）
+
+快速排序的方法：
+
+```cpp
+void partition(int* index, vector<int>& nums, int L, int R, int pivot){
+    int lessIndex = L-1;
+    int moreIndex = R+1;
+    int i = L;
+    while(i < R && i < moreIndex){
+        if(nums[i] < pivot){
+            lessIndex += 1;
+            int temp = nums[i];
+            nums[i] = nums[lessIndex];
+            nums[lessIndex] = temp;
+            i += 1;
+        }else if(nums[i] == pivot){
+            i += 1;
+        }else if(nums[i] > pivot && i < moreIndex){
+            moreIndex -= 1;
+            int temp = nums[i];
+            nums[i] = nums[moreIndex];
+            nums[moreIndex] = temp;
+        }
+    }
+    index[0] = lessIndex + 1;
+    index[1] = moreIndex - 1;
+}
+void quickSort(vector<int>& nums, int L, int R){
+    if(L < R){
+        int index[2] = {};
+        int pivot = nums[R];
+        // index[0]和index[1] 分别是等于pivot的部分的开头结尾的两个索引
+        partition(index, nums, L, R, pivot);
+        quickSort(nums, L, index[0]-1);
+        quickSort(nums, index[1]+1, R);
+    }
+}
+```
+
+堆排序方法：
+
+```cpp
+void swap(vector<int>& nums, int index1, int index2){
+    int temp = nums[index1];
+    nums[index1] = nums[index2];
+    nums[index2] = temp;
+}
+void heapAdjust(vector<int>& nums, int i, int length){
+    int leftChild = 2*i + 1;
+    int rightChild = 2*i + 2;
+    int max = i;
+    if(leftChild < length && nums[max] < nums[leftChild]){
+        max = leftChild;
+    }
+    if(rightChild < length && nums[max] < nums[rightChild]){
+        max = rightChild;
+    }
+    if(max != i){
+        swap(nums, i, max);
+        heapAdjust(nums, max, length); // 递归使其子树也满足大顶堆
+    }
+}
+void heapSort(vector<int>& nums){
+    int length = nums.size();
+    // 创建树
+    for(int i = length/2 - 1; i >= 0;i--){
+        heapAdjust(nums, i, length);
+    }
+    // 调整树
+    for(int i = length-1; i > 0; i--){
+        swap(nums, i, 0); // 交换第一个元素与第i个元素
+        heapAdjust(nums, 0, i);
+    }
+}
+```
 
