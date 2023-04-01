@@ -1,4 +1,6 @@
-这是在honor中修改的文件。
+# 牛客输入输出cpp
+
+https://ac.nowcoder.com/acm/contest/5647
 
 # 数组
 
@@ -2941,6 +2943,50 @@ public:
     }
 };
 ```
+
+### [单词搜索](https://leetcode.cn/problems/word-search/description/)
+
+给定一个 `m x n` 二维字符网格 `board` 和一个字符串单词 `word` 。如果 `word` 存在于网格中，返回 `true` ；否则，返回 `false` 。
+
+```cpp
+class Solution {
+public:
+    bool backTrack(vector<vector<char>>& board, string& word, vector<vector<bool>>& visited, int startIndex, int i, int j){
+        if(startIndex >= word.size()){
+            return true; // 如果startIndex已经到了这里了，说明word前几位都在board里找到了相等的
+        }
+        
+        if(i < 0 || i >= board.size() || j < 0 || j >= board[0].size() //越界
+        || visited[i][j] //访问过
+        || board[i][j] != word[startIndex]){ //不相等，返回false
+            return false;
+        }
+        //代码到了这里起码说明board[i][j]合法且与word[startIndex]相等
+        visited[i][j] = true;
+        if(backTrack(board, word, visited, startIndex+1, i-1, j) || 
+           backTrack(board, word, visited, startIndex+1, i, j-1) || 
+           backTrack(board, word, visited, startIndex+1, i+1, j) || 
+           backTrack(board, word, visited, startIndex+1, i, j+1)) return true;
+        
+        visited[i][j] = false;
+        return false;
+    }
+
+    bool exist(vector<vector<char>>& board, string word) {
+        int m = board.size();
+        int n = board[0].size();
+        for(int i = 0; i < m;i++){
+            for(int j = 0;j < n;j++){
+                vector<vector<bool>> visited(m, vector<bool>(n, false));
+                if(backTrack(board, word, visited, 0, i, j)) return true;
+            }
+        }
+        return false;
+    }
+};
+```
+
+
 
 ### [重新安排行程](https://leetcode.cn/problems/reconstruct-itinerary/)
 

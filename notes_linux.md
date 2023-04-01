@@ -1227,7 +1227,394 @@ ipcrm 用法
      - 运行进程的电脑死机，宕机了：存在在共享内存中的数据，没有了；内存映射区的数据 ，由于磁盘文件中的数据还在，所以内存映射区的数据还有。
    - 生命周期：进程退出，内存映射消失，共享内存还在，需要手动删除共享内存。如果进程退出，会自动与共享内存取消关联。
 
+### 消息队列（补上）
+
 
 
 ## 守护进程
 
+
+
+# 进程同步
+
+## 锁
+
+用于保护临界区，以保护==任何时刻只有一个线程在执行其中的代码==，其大体轮廓大体如下：
+
+```
+　　lock_the_mutex(...);
+
+　　临界区
+
+　　unlock_the_mutex(...);
+```
+
+下列三个函数给一个互斥锁上锁和解锁：
+
+```
+#include <pthread.h>
+
+int pthread_mutex_lock(pthread_mutex_t *mptr);　　//若不能立刻获得锁，将阻塞在此处
+
+int pthread_mutex_trylock(pthread_mutex_t *mptr);　　//若不能立刻获得锁，将返回EBUSY，用户可以根据此返回值做其他操作，非阻塞模式
+
+int pthread_mutex_unlock(pthread_mutex_t *mptr);　　//释放锁
+```
+
+互斥锁通常用于保护由多个线程或多个进程分享的共享数据(Share Data)
+
+产生死锁的的四个条件如下：
+
+- 互斥条件：一个资源每次只能被一个进程使用；
+- 请求与保持条件：一个进程因请求资源而阻塞时，对已获得的资源保持不放；
+- 不剥夺条件：进程已获得的资源，在没使用完之前，不能强行剥夺；
+- 循环等待条件：多个进程之间形成一种互相循环等待资源的关系。
+
+## 条件变量
+
+```c
+/*
+    条件变量的类型 pthread_cond_t
+    int pthread_cond_init(pthread_cond_t *restrict cond, const pthread_condattr_t *restrict attr);
+    int pthread_cond_destroy(pthread_cond_t *cond);
+    int pthread_cond_wait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex);
+        - 等待，调用了该函数，线程会阻塞。
+    int pthread_cond_timedwait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex, const struct timespec *restrict abstime);
+        - 等待多长时间，调用了这个函数，线程会阻塞，直到指定的时间结束。
+    int pthread_cond_signal(pthread_cond_t *cond);
+        - 唤醒一个或者多个等待的线程
+    int pthread_cond_broadcast(pthread_cond_t *cond);
+        - 唤醒所有的等待的线程
+*/
+```
+
+条件变量和互斥锁相互配合，调用`pthread_cond_wait`之后线程会在此处阻塞，并且释放对应的mutex的权限（即允许其他线程加锁并处理公共区域的数据）；当满足条件变量满足（别的线程调用了`pthread_cond_signal`），那么就该函数结束阻塞，并把对应的mutex重新加锁，继续向下运行。
+
+## 信号量
+
+```c
+/*
+    信号量的类型 sem_t
+    int sem_init(sem_t *sem, int pshared, unsigned int value);
+        - 初始化信号量
+        - 参数：
+            - sem : 信号量变量的地址
+            - pshared : 0 用在线程间 ，非0 用在进程间
+            - value : 信号量中的值
+
+    int sem_destroy(sem_t *sem);
+        - 释放资源
+
+    int sem_wait(sem_t *sem);
+        - 对信号量加锁，调用一次对信号量的值-1，如果值为0，就阻塞
+
+    int sem_trywait(sem_t *sem);
+
+    int sem_timedwait(sem_t *sem, const struct timespec *abs_timeout);
+    int sem_post(sem_t *sem);
+        - 对信号量解锁，调用一次对信号量的值+1
+
+    int sem_getvalue(sem_t *sem, int *sval);
+*/
+```
+
+信号量的值可以简单理解为该线程可操作的空间是多大。首先对信号量加锁（调用`sem_wait`，每调用一次则信号量的值减一），如果信号量的值大于0，则不阻塞，说明该线程还可以操作该共享的空间；如果信号量的值等于0，则阻塞，直到别的线程调用了`sem_post`（每调用一次则信号量的值加一），然后唤醒正在等待该信号量值变为正数的任意线程。
+
+# 网络编程
+
+## IP转换函数
+
+IP转换函数完成的是 `字符串IP -> 整数`，`网络字节序 <-> 主机字节序`的转换。
+
+```c
+#include <arpa/inet.h>
+in_addr_t inet_addr (const char *cp); # 字符串IP -> 整数（in network byte order）
+int inet_aton(const char *cp, struct in_addr *inp);# 字符串IP -> 整数(in network byte order)
+    /*
+    struct in_addr
+    {
+      in_addr_t s_addr;
+    };
+    */
+char *inet_ntoa(struct in_addr in); 
+```
+
+下面这对更新的函数也能完成前面3 个函数同样的功能，并且它们同时适用IPV4 地址和 PV6 地址
+
+```c
+#include <arpa/inet.h>
+int inet_pton(int af, const char *src, void *dst);
+/*
+af : addr family, AF_INET or AF_INET6
+src : IP字符串
+dst : 转换后的结果 传出参数
+*/
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+```
+
+
+
+## socket函数
+
+
+
+<img src=".\asset\tcp_socket.png" alt="tcp_socket" style="zoom: 67%;" />
+
+```c
+#include <sys/types .h>
+#include <sys/socket .h>
+#include <arpa/inet.h> // 包合了这个头文件，上面两个就可以省略
+int socket (int domain, int type, int protocol);
+功能:创建一个套接字
+参数:
+domain: 协议族
+    AF_INET : ipv4
+    AF_INET6 : ipv6
+    AF_UNIX，AF_LOCAL : 本地套接字通信(进程间通信)
+type: 通信过程中使用的协议类型
+    SOCK_STREAM : 流式协议
+    SOCK_DGRAM :报式协议
+protoco1 : 具体的一个协议。一般写0
+    SOCK_STREAM : 流式协议认使用 TCP
+    SOCK_DGRAM :报式协议认使用 UDP
+
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+功能:绑定，将fd 和本地的IP + 端口进行绑定
+参数:
+    sockfd : 通过socket函数得到的文件描述符
+    addr : 需要绑定的socket地址，这个地址封装了ip和端口号的信息
+    addren : 第二个参数结构体占的内存大小
+int listen(int sockfd, int backlog);// 
+功能:监听这个socket上的连接
+参数:
+    sockfd : 通过socket函数得到的文件描述符
+    backlog : 未连接的和已连接（半连接和全连接队列）的和的最大值，/proc/sys/net/core/somaxconn
+int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+功能:接收客户端连接，默认是一个阻塞的函数，阻塞等待客户端连接
+参数:
+    sockfd:用于监听的文件描述符
+    addr : 传出参数，记录了连接成功后客户端的地址信息(ip，port)
+    addrlen : 指定第二个参数的对应的内存大小
+返回值:
+    成功:用于通信的文件描述符
+    -1 : 失败
+int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+功能：客户端连接服务器
+参数:
+	sockfd:用于通信的文件描述符
+    addr : 客户端要连接的服务器的地址信息
+    addrlen : 第二个参数的内存大小
+        
+
+ssize_t write(int fd, const void *buf, size_t count);
+ssize_t read(int fd, void *buf, size_t count);
+```
+
+
+
+## tcp-client/sever的bug1
+
+如果是下面的情况，现象不正常：客户端正常发送完毕数据之后，服务器端并没有跳出循环。
+
+```c
+//client
+int count = 0;
+while(count <= 2){
+    count++;
+
+    char * sendBuf = "I am Client\n";
+    write(fd_sock, sendBuf, strlen(sendBuf));
+    sleep(1);
+    
+}
+char recvBuf[1024] = {};
+int len_recv = read(fd_sock, recvBuf, sizeof(recvBuf));
+printf("len_recv = %d, sizeof(recvBuf) == %ld\n", len_recv, sizeof(recvBuf));
+if(len_recv == -1){
+    perror("read");
+    exit(-1);
+}else if(len_recv > 0){
+    printf("client recv: %s\n", recvBuf);
+}else if(len_recv == 0){
+    printf("sever close\n");
+
+}
+```
+
+```c
+//sever
+char recvBuf[1024] = {0};
+while(1){
+    int len = read(cfd, recvBuf, sizeof(recvBuf));
+    printf("recvBuf: %s\n", recvBuf);
+    printf("len = %d, sizeof(recvBuf) == %ld\n", len, sizeof(recvBuf));
+    if(len == -1){
+        perror("read");
+        exit(-1);
+    }else if(len > 0){
+        printf("sever recv: %s\n", recvBuf);
+
+    }else if(len == 0){
+        printf("client close\n");
+        break;
+    }
+    
+}
+
+char * sendBuf = "I am Sever\n";
+write(cfd, sendBuf, strlen(sendBuf));
+```
+
+原因是：read函数是默认阻塞的。客户端发送完数据之后，并没有马上结束进程，所以对这个socket仍然保留着`WR`权限，那么客户端就会在读这个socket的时候阻塞，不会正常退出。直到客户端结束进程，服务器端read返回0，代表读到EOF，服务端程序继续往下运行。
+
+## 多进程并发服务器
+
+
+
+
+
+## 多线程并发服务器
+
+CPU 密集型 和 IO密集型 的区别，如何确定线程池大小？
+
+- IO密集型：大量网络，文件操作 
+- CPU 密集型：大量计算，cpu 占用越接近 100%, 耗费多个核或多台机器。单核CPU处理CPU密集型程序，就不要使用多线程了。多核CPU处理CPU密集型程序才合适，而且中间可能没有线程的上下文切换（一个核心处理一个线程）。
+
+最佳线程数目 = （线程等待时间与线程CPU时间之比 + 1）* CPU数目
+
+https://cloud.tencent.com/developer/article/1806245
+
+## 端口复用
+
+端口复用最常用的用途是:
+
+- 防止服务器端断开又重启的时候时之前绑定的端口还未释放，而导致无法监听该端口
+- 防止程序突然退出而系统没有释放端口，而导致无法监听该端口
+
+
+
+```
+#include <sys/types .h>
+#include <sys/socket .h>
+//设置sock属性，不一定是端口复用
+int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
+
+//设置sock端口复用, 要再绑定之前设置
+int reuse = 1;
+int setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+
+
+常看网络相关信息的命令
+netstat
+参数
+-a 所有的socket
+-p 显示正在使用socket的程序的名称
+-n 直接使用IP地址，而不通过域名服务器
+```
+
+
+
+
+
+## IO多路复用
+
+### select
+
+主旨思想：
+1. 首先要构造一个关于文件描述符的列表，将要监听的文件描述符添加到该列表中。
+2. 调用一个系统函数，监听该列表中的文件描述符，直到这些描述符中的一个或者多个进行I/O操作时，该函数才返回。
+a.这个函数是阻塞
+b.函数对文件描述符的检测的操作是由内核完成的
+3. 在返回时，它会告诉进程有多少（哪些）描述符要进行I/O操作
+
+```c
+// sizeof(fd_set) = 128 1024
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/select.h>
+int select(int nfds, fd_set *readfds, fd_set *writefds,
+fd_set *exceptfds, struct timeval *timeout);
+- 参数：
+    - nfds : 委托内核检测的最大文件描述符的值 + 1
+    - readfds : 要检测的文件描述符的读的集合，委托内核检测哪些文件描述符的读的属性
+    - 一般检测读操作
+    - 对应的是对方发送过来的数据，因为读是被动的接收数据，检测的就是读缓冲
+    区
+    - 是一个传入传出参数
+    - writefds : 要检测的文件描述符的写的集合，委托内核检测哪些文件描述符的写的属性
+    - 委托内核检测写缓冲区是不是还可以写数据（不满的就可以写）
+    - exceptfds : 检测发生异常的文件描述符的集合
+    - timeout : 设置的超时时间
+        struct timeval {
+        long tv_sec; /* seconds */
+        long tv_usec; /* microseconds */
+        };
+        - NULL : 永久阻塞，直到检测到了文件描述符有变化
+        - tv_sec = 0 tv_usec = 0， 不阻塞
+        - tv_sec > 0 tv_usec > 0， 阻塞对应的时间
+- 返回值 :
+    - -1 : 失败
+    - >0(n) : 检测的集合中有n个文件描述符发生了变化
+// 将参数文件描述符fd对应的标志位设置为0
+void FD_CLR(int fd, fd_set *set);
+// 判断fd对应的标志位是0还是1， 返回值 ： fd对应的标志位的值，0，返回0， 1，返回1
+int FD_ISSET(int fd, fd_set *set);
+// 将参数文件描述符fd 对应的标志位，设置为1
+void FD_SET(int fd, fd_set *set);
+// fd_set一共有1024 bit, 全部初始化为0
+void FD_ZERO(fd_set *set);
+```
+
+### poll
+
+与select的思路一致，也需要遍历文件描述符组才可以确定是哪些文件描述符对应的缓冲区的状态发生了变化
+
+ poll 和 select 并没有太大的本质区别，**都是使用「线性结构」存储进程关注的 Socket 集合，因此都需要遍历文件描述符集合来找到可读或可写的 Socket，时间复杂度为 O(n)，而且也需要在用户态与内核态之间拷贝文件描述符集合**
+
+### epoll
+
+#### 原理
+
+*第一点*，epoll 在内核里使用**红黑树来跟踪进程所有待检测的文件描述字**，把需要监控的 socket 通过 `epoll_ctl()` 函数加入内核中的红黑树里，红黑树是个高效的数据结构，增删改一般时间复杂度是 `O(logn)`。而 select/poll 内核里没有类似 epoll 红黑树这种保存所有待检测的 socket 的数据结构，所以 select/poll 每次操作时都传入整个 socket 集合给内核，而 epoll 因为在内核维护了红黑树，可以保存所有待检测的 socket ，所以只需要传入一个待检测的 socket，减少了内核和用户空间大量的数据拷贝和内存分配。
+
+*第二点*， epoll 使用**事件驱动**的机制，内核里**维护了一个链表来记录就绪事件**，当某个 socket 有事件发生时，通过**回调函数**内核会将其加入到这个就绪事件列表中，当用户调用 `epoll_wait()` 函数时，**只会返回有事件发生的文件描述符的个数**，不需要像 select/poll 那样轮询扫描整个 socket 集合，大大提高了检测的效率。
+
+虽然是只是返回的文件描述符的个数n，但是内核维护的红黑树会将有事件发生的文件描述符转移到树的头部，因此用户可以访问前n个文件描述符即可。
+
+#### epoll的边缘触发与水平触发
+
+水平触发：LT（level - triggered）是缺省的工作方式，并且同时支持 block 和 no-block socket。在这种做法中，内核告诉你一个文件描述符是否就绪了，然后你可以对这个就绪的 fd 进行 IO 操作。如果你不作任何操作，内核还是会继续通知你的。
+
+读缓冲区有数据 - > epoll检测到了会给用户通知
+
+- a.用户不读数据，数据一直在缓冲区，epoll 会一直通知
+- b.用户只读了一部分数据，epoll会通知
+- c.缓冲区的数据读完了，不通知
+
+
+
+边缘触发：ET（edge - triggered）是高速工作方式，只支持 no-block socket。在这种模式下，当描述符从未就绪变为就绪时，内核通过epoll告诉你。然后它会假设你知道文件描述符已经就绪，并且不会再为那个文件描述符发送更多的就绪通知，直到你做了某些操作导致那个文件描述符不再为就绪状态了。但是请注意，如果一直不对这个 fd 作 IO 操作（从而导致它再次变成未就绪），内核不会发送更多的通知（only once）。
+ET 模式在很大程度上减少了 epoll 事件被重复触发的次数，因此效率要比 LT 模式高。epoll工作在 ET 模式的时候，**必须使用非阻塞套接口**，以**避免由于一个文件句柄的阻塞读/阻塞写操作把处理多个文件描述符的任务饿死**。（==因为ET模式下，read一个文件描述符的时候需要循环去读cfd的缓冲区，如果cfd是阻塞IO，那么会阻塞在这里？如果缓冲区有新数据到来，程序将无法及时获取到这些新数据，从而出现读取不完整的情况。==）
+
+读缓冲区有数据 - > epoll检测到了会给用户通知
+
+- a.用户不读数据，数据一致在缓冲区中，epoll下次检测的时候就不通知了
+- b.用户只读了一部分数据，epoll不通知
+- c.缓冲区的数据读完了，不通知
+
+
+
+# 项目实战
+
+## 阻塞+非阻塞，同步+异步
+
+一个典型的网络IO接口调用，分为两个阶段，**分别是“数据就绪” 和 “数据读写**”，数据就绪阶段分为阻塞和非阻塞，表现得结果就是，阻塞当前线程或是直接返回。
+
+同步表示A向B请求调用一个网络IO接口时（或者调用某个业务逻辑API接口时），数据的读写都是由请求方A自己来完成的，即应用程序自己把数据从缓冲区搬送到应用程序（不管是阻塞还是非阻塞）；
+
+异步表示A向B请求调用一个网络IO接口时（或者调用某个业务逻辑API接口时），向B传入请求的事件以及事件发生时通知的方式，A就可以处理其它逻辑了，当B监听到事件处理完成后，会用事先约定好的通知方式，通知A处理结果。进一步来说，应用程序A并不用自己花时间来进行数据的读写，而是把这个任务交给操作系统B（告知操作系统请求的事件以及事件发生时通知的方式），操作系统完成后，会按照约定好的通知方式告知应用程序。
+
+![阻塞、非阻塞、同步、异步](.\asset\阻塞、非阻塞、同步、异步.png)
+
+read、recv什么时候会阻塞？见匿名管道部分
