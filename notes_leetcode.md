@@ -957,7 +957,7 @@ public:
 
 ### 填坑：C++中的优先级队列priority_queue的应用与原理
 
-**优先级队列其实是一个堆，堆就是一棵完全二叉树，同时保证父子节点的顺序关系。**
+**优先级队列底层是一个堆（大顶堆、小顶堆），堆就是一棵完全二叉树，同时保证父子节点的顺序关系。**
 
 
 
@@ -2872,6 +2872,8 @@ public:
 
 ### [全排列](https://leetcode.cn/problems/permutations/)
 
+给定一个不含重复数字的数组 `nums` ，返回其 *所有可能的全排列* 。你可以 **按任意顺序** 返回答案。
+
 用used数组标记每一个数是否被用了，并且去掉重复使用同一个数
 
 ```c++
@@ -2908,6 +2910,8 @@ public:
 
 
 ### [全排列 II](https://leetcode.cn/problems/permutations-ii/)
+
+给定一个可包含重复数字的序列 `nums` ，***按任意顺序*** 返回所有不重复的全排列。
 
 ```c++
 class Solution {
@@ -2997,6 +3001,112 @@ public:
 
 
 ### [解数独](https://leetcode.cn/problems/sudoku-solver/)
+
+
+
+## 迷宫or岛屿问题
+
+### 迷宫
+
+定义一个二维数组 N*M ，如 5 × 5 数组下所示：
+
+```
+int maze[5][5] = {
+0, 1, 0, 0, 0,
+0, 1, 1, 1, 0,
+0, 0, 0, 0, 0,
+0, 1, 1, 1, 0,
+0, 0, 0, 1, 0,
+};
+```
+
+它表示一个迷宫，其中的1表示墙壁，0表示可以走的路，只能横着走或竖着走，不能斜着走，要求编程序找出从左上角到右下角的路线。入口点为[0,0],既第一格是可以走的路。
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+vector<vector<int>> res;
+vector<vector<int>> temp_path;
+
+void dfs(vector<vector<int>>& maze, int i, int j, int n, int m){
+    
+    if(i == n-1 && j == m-1){
+        temp_path.push_back({i, j});
+        res = temp_path;
+        return;
+    }
+
+    if(i < 0 || j < 0 || i >= n || j >= m || maze[i][j] == 1) return;
+    maze[i][j] = 1;
+    temp_path.push_back({i, j});
+    if(i-1 >= 0 && maze[i-1][j] != 1) dfs(maze, i-1, j, n, m);
+    if(j-1 >= 0 && maze[i][j-1] != 1) dfs(maze, i, j-1, n, m);
+    if(i+1 < n && maze[i+1][j] != 1) dfs(maze, i+1, j, n, m);
+    if(j+1 < m && maze[i][j+1] != 1) dfs(maze, i, j+1, n, m);
+    maze[i][j] = 0;
+    temp_path.pop_back();
+    return;
+}
+
+int main() {
+    int n, m;
+    cin >> n >> m;
+    vector<vector<int>> maze(n, vector<int>(m, 0));
+    for(int i = 0;i < n;i++){
+        for(int j = 0;j < m;j++){
+            cin >> maze[i][j];
+        }
+    }
+    res.clear();
+    dfs(maze, 0, 0, n, m);
+    //cout << maze.size() << " " << maze[0].size() << endl;
+    for(auto v:res){
+        cout << "(" << v[0] << "," << v[1] << ")" << endl;
+    }
+
+    return 0;
+}
+// 64 位输出请用 printf("%lld")
+```
+
+### [岛屿数量](https://leetcode.cn/problems/number-of-islands/)
+
+给你一个由 `'1'`（陆地）和 `'0'`（水）组成的的二维网格，请你计算网格中岛屿的数量。
+
+岛屿总是被水包围，并且每座岛屿只能由水平方向和/或竖直方向上相邻的陆地连接形成。
+
+此外，你可以假设该网格的四条边均被水包围。
+
+```cpp
+class Solution {
+public:
+    void dfs(vector<vector<char>>& grid, int i, int j){
+        int m = grid.size();
+        int n = grid[0].size();
+        grid[i][j] = '0';
+        if(i >= 1 && grid[i-1][j] == '1') dfs(grid, i-1, j);
+        if(i <= m-2 && grid[i+1][j] == '1') dfs(grid, i+1, j);
+        if(j >= 1 && grid[i][j-1] == '1') dfs(grid, i, j-1);
+        if(j <= n-2 && grid[i][j+1] == '1') dfs(grid, i, j+1);
+        return;
+    }
+    int numIslands(vector<vector<char>>& grid) {
+        int res = 0;
+        int m = grid.size();
+        int n = grid[0].size();
+        for(int i = 0;i < m;i++){
+            for(int j = 0;j < n;j++){
+                if(grid[i][j] == '1'){
+                    res++;
+                    dfs(grid, i, j);
+                }
+            }
+        }
+        return res;
+    }
+};
+```
 
 
 
@@ -3970,11 +4080,11 @@ public:
 
 1. 确定dp数组（dp table）以及下标的含义
 
-   `dp[i]`：`[0,i]`的数字构成的二叉搜索树的个数`dp[i]`
+   `dp[i]`：`[1,i]`的数字构成的二叉搜索树的个数`dp[i]`
 
 2. 确定递推公式
 
-   从 0 开始到 i ，每一个数字 j 轮流做头节点，剩下的 `[0, j-1]` 和 `[j+1, i]` 分别在左右两个子树， `[0, j-1]` 有 j 个节点，有 `dp[j-1]` 种排列方式， `[j+1, i]`  有 `i-j` 个节点，有 `dp[i-j]`种排列方式，所以当  j 做头节点，按这种情况有 `dp[j-1] * dp[i-j] ` 种方式.
+   从 1 开始到 i ，每一个数字 j 轮流做头节点，剩下的 `[1, j-1]` 和 `[j+1, i]` 分别在左右两个子树， `[1, j-1]` 有 j-1 个节点，有 `dp[j-1]` 种排列方式， `[j+1, i]`  有 `i-j` 个节点，有 `dp[i-j]`种排列方式，所以当  j 做头节点，按这种情况有 `dp[j-1] * dp[i-j] ` 种方式.
 
    `dp[i] += dp[j-1] * dp[i-j]`
 
@@ -4126,6 +4236,30 @@ int main()
 初始化 `dp[0]=0`，都初始化为0.
 
 **需要从后向前遍历，倒序遍历**的原因是，本质上还是一个对二维数组的遍历，并且右下角的值依赖上一层左上角的值，因此需要保证左边的值仍然是上一层的，从右向左覆盖，所以倒序遍历。
+
+```cpp
+int solve01BagProblem_v2(std::vector<std::vector<int>>& things, int bagCap){
+		// things 是一个二维数组，n * 2，第一列是weight，第二列是value
+        int n = things.size();
+        std::vector<int> weight(n, 0);
+        std::vector<int> value(n, 0);
+        std::sort(things.begin(), things.end(), cmp);
+        for (int i = 0; i < things.size(); i++) {
+            weight[i] = things[i][0];
+            value[i] = things[i][1];
+        }
+
+		std::vector<int> dp(bagCap+1, 0);
+		for(int i = 0;i < n;i++){
+			for(int j = bagCap; j >= weight[i]; j--){
+				dp[j] = std::max(dp[j], dp[j-weight[i]]+value[i]);
+			}
+		}
+		return dp.back();
+	}
+```
+
+
 
 ### [分割等和子集](https://leetcode.cn/problems/partition-equal-subset-sum/)
 
@@ -4952,6 +5086,10 @@ public:
 
 ### [子序列-最大子数组和](https://leetcode.cn/problems/maximum-subarray/)
 
+给你一个整数数组 `nums` ，请你找出一个具有最大和的连续子数组（子数组最少包含一个元素），返回其最大和。
+
+**子数组** 是数组中的一个连续部分。
+
 ```cpp
 class Solution {
 public:
@@ -5514,7 +5652,13 @@ public:
 
 # 排序方法（快速排序与堆排序）
 
-快速排序的方法：
+
+
+## 快速排序的方法：
+
+快速排序是目前被认为最好的一种内部排序方法，其时间复杂度在平均情况下是**O(nlogn)**，在最坏的情况下（有序时）时间复杂度是**o (n^2)**。
+
+我们知道快速排序的性能和「划分」出的子数组的长度密切相关。直观地理解如果每次规模为 n的问题我们都划分成 1 和 n−1，每次递归的时候又向 n−1 的集合中递归，这种情况是最坏的，时间代价是 O(n2)。我们可以引入随机化来加速这个过程，它的时间代价的期望是 O(n)。
 
 ```cpp
 void partition(int* index, vector<int>& nums, int L, int R, int pivot){
@@ -5552,7 +5696,13 @@ void quickSort(vector<int>& nums, int L, int R){
 }
 ```
 
-堆排序方法：
+## 堆排序方法：
+
+堆最常用的是二叉堆，大顶堆也就是子节点的值永远不大于父节点的值。
+
+堆排序的步骤：
+
+1. 创建树：
 
 ```cpp
 void swap(vector<int>& nums, int index1, int index2){
@@ -5564,6 +5714,7 @@ void heapAdjust(vector<int>& nums, int i, int length){
     int leftChild = 2*i + 1;
     int rightChild = 2*i + 2;
     int max = i;
+    //找到该节点和子节点们中的最大值索引max
     if(leftChild < length && nums[max] < nums[leftChild]){
         max = leftChild;
     }
@@ -5579,7 +5730,7 @@ void heapSort(vector<int>& nums){
     int length = nums.size();
     // 创建树
     for(int i = length/2 - 1; i >= 0;i--){
-        heapAdjust(nums, i, length);
+        heapAdjust(nums, i, length); //从倒数第二层开始创建
     }
     // 调整树
     for(int i = length-1; i > 0; i--){
@@ -5588,4 +5739,10 @@ void heapSort(vector<int>& nums){
     }
 }
 ```
+
+## 例题：
+
+[剑指 Offer II 076. 数组中的第 k 大的数字](https://leetcode.cn/problems/xx4gT2/description/)
+
+[前 K 个高频元素](https://leetcode.cn/problems/top-k-frequent-elements/)
 
