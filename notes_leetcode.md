@@ -5746,3 +5746,52 @@ void heapSort(vector<int>& nums){
 
 [前 K 个高频元素](https://leetcode.cn/problems/top-k-frequent-elements/)
 
+# 图的遍历
+
+## DFS
+
+```cpp
+class Solution {
+public:
+    vector<vector<int>> res;
+    vector<int> path;
+    vector<bool> visited;
+    vector<bool> onPath;
+    void travel(vector<vector<int>>& graph, int cur){
+        //if(onPath[cur]){
+        //    return;
+        //}
+        if(cur == graph.size()-1){
+            path.push_back(cur);
+            res.push_back(path);
+            path.pop_back();
+            return;
+        }
+        visited[cur] = true;
+        onPath[cur] = true;
+        path.push_back(cur);
+        for(auto child:graph[cur]){
+            travel(graph, child);
+        }
+        path.pop_back();
+        onPath[cur] = false;
+    }
+
+    vector<vector<int>> allPathsSourceTarget(vector<vector<int>>& graph) {
+        int n = graph.size();
+        res.clear();
+        path.clear();
+        visited.resize(n, false);
+        onPath.resize(n, false);
+        travel(graph, 0);
+        return res;
+    }
+};
+```
+
+## BFS
+
+```
+
+```
+
