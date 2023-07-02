@@ -108,3 +108,21 @@ git reset --hard
 git pull REMOTENAME BRANCENAME
 ```
 
+## git的项目管理
+
+当参与开源项目的时候，我们需要把开源项目fork一个自己的仓库，然后再将自己的仓库clone到本地进行实际的开发。
+
+其实这里就涉及到三个概念。开源项目：upstream。自己fork的仓库：remote。本地的仓库：local。
+
+我们在本地修改文件，其实是可以认为是开发不同的任务，因此最好的做法是在`main`或`master`分支上，重新切出一个新的分支`feature/task_x`，在该分支下进行文件的修改，然后再push到remote端，再提交新的pr，供给上游项目，即开源项目的管理者审核。如果审核通过，pr被merge，此时我们需要将我们自己fork的仓库与upstream的仓库进行同步。
+
+与upstream的仓库进行同步有两种方法，一种是删除之前的fork的仓库，再重新fork。一种是在fork仓库的github的首页上点击`syncfork`的按钮进行同步，然后将同步后的代码pull到本地，再切换对应的分支进行相应的开发。如果不是用的github没有`syncfork`的按钮，则需要在本地进行相应的设置并手动同步，同步的步骤可参考https://github.com/selfteaching/the-craft-of-selfteaching/issues/67。
+
+手动同步：
+
+1. git remote add upstream https://xxx.git 需要设置upstream
+2. git fetch upstream  拉取上游，但不合并
+3. git checkout main 切换到mian分支
+4. git merge upstream/main 合并远程的main分支
+5. git push 将本地同步后的push到自己fork的仓库的main分支
+
