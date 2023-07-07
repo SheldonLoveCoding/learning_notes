@@ -108,6 +108,19 @@ git reset --hard
 git pull REMOTENAME BRANCENAME
 ```
 
+### 如果远程仓库新建了一个branch，如何同步呢？
+
+```git
+git pull origin <远程分支名>:<本地分支名> // 拉取
+
+git checkout <本地分支名> //切换本地分支
+
+git push -u origin <远程分支名>  //本地与远程关联
+// 之后就可以 git pull git push 操作了
+```
+
+
+
 ## git的项目管理
 
 当参与开源项目的时候，我们需要把开源项目fork一个自己的仓库，然后再将自己的仓库clone到本地进行实际的开发。
