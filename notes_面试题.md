@@ -920,6 +920,24 @@ public:
 
 emplace_back()在一些场景下会比push_back()更快，就emplace_back()支持直接构造，直接在尾部创建这个元素，比push_back少一个构造步骤。
 
+### vector的resize()和reverse()
+
+resize()是修改vector的大小，如果resize后的size小于原来的size，则会把后面多余的元素抛弃；如果size大于原来的size，则会按照默认值或者给定值填充多出来的部分。
+
+reverse(n)是提前分配内存空间，如果分配的n大于了max_size，则会报错，如果n小于原来的size或capacity，则size和capacity保持不变。
+
+
+
+### map() 和 unordered_map()
+
+map底层是红黑树，内部是对key进行排序。
+
+unordered_map底层是哈希
+
+
+
+
+
 
 
 
