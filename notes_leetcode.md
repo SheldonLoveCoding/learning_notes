@@ -460,7 +460,38 @@ public:
         return i_slow;
     }
 };
+
+
+/////
+int main(int argc, char* agrv[]){
+    cout << argc << endl;
+
+    cout << agrv[1] << endl;
+
+    string s = agrv[1];
+    cout << s << endl;
+
+    int len = s.size();
+    int slow = 0, fast = 0;
+    while(s[slow] != ' '){
+        ++slow;
+        ++fast;
+    }
+    while(fast < len){
+        while(s[fast] == ' '){
+            ++fast;
+        }
+        s[slow] = s[fast];
+        ++slow;
+        ++fast;
+    }
+    s.resize(slow);
+    cout << s << endl;
+    return 0;
+}
 ```
+
+
 
 ### 例题2 [删除有序数组中的重复项](https://leetcode.cn/problems/remove-duplicates-from-sorted-array/)
 
