@@ -69,6 +69,13 @@ git reset --hard 提交id  #回到那一次的commit，更改代码
 
 ## add / commit / push的区别？push的是哪些文件？
 
+**git add**
+将当前目录下修改的所有代码从工作区添加到暂存区
+**git commit**
+将暂存区的修改提交到本地仓库
+**git push**
+将本地仓库的修改提交到github远程仓库上
+
 commit多次的话，push是要全部push上去的。
 
 
@@ -138,6 +145,15 @@ git push -u origin <远程分支名>  //本地与远程关联
 3. git checkout main 切换到mian分支
 4. git merge upstream/main 合并远程的main分支
 5. git push 将本地同步后的push到自己fork的仓库的main分支
+
+## git的rebase 和 merge
+
+基础扫盲篇：git中rebase和merge的区分 - Fenn的文章 - 知乎 https://zhuanlan.zhihu.com/p/558666061
+
+Merge，Rebase，Cherry-Pick 了解一下 - Ethan的文章 - 知乎 https://zhuanlan.zhihu.com/p/156726632
+
+merge: 将在子分支的所有提交记录成一次commit，保留在记录中。
+rebase:不会保留旧的commit记录，直接将分支中的内容复制到master的记录之后，从而保证了线性的commit记录。
 
 
 
