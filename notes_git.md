@@ -139,3 +139,13 @@ git push -u origin <远程分支名>  //本地与远程关联
 4. git merge upstream/main 合并远程的main分支
 5. git push 将本地同步后的push到自己fork的仓库的main分支
 
+
+
+# Docker
+
+## 常用命令
+
+1. `docker ps -a` 查看已有容器
+2. `docker start ID` 启动容器
+3. `docker stop ID` 关闭容器
+4. `docker rm ID` 删除容器

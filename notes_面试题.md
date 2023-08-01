@@ -130,13 +130,16 @@ FIR滤波器：主要采用非递归结构，不存在稳定性问题，运算�
 
 智能指针原理与简单实现 https://blog.csdn.net/xiaoyaolangwj/article/details/129612435
 
-### unique_ptr
+### unique_ptr：独占指针
 
-同⼀时刻只能有⼀个 unique_ptr 指向给定对象，离开作⽤域时，若其指向对象，则自动将其所指对象销毁（默认delete）。 
+- 同⼀时刻只能有⼀个 unique_ptr 指向给定对象；
+- 离开作⽤域时，若其指向对象，则自动将其所指对象销毁（默认delete）；
+- 只可以move，不可以copy
 
 实现了运算符 `*` 和 `->` 运算符的重载。
 
 ```cpp
+/*创建*/
 //构建unique_ptr方式1，需要delete 原始指针
 Cat *c_p2 = new Cat("yz");
 std::unique_ptr<Cat> u_c_p2{c_p2};
@@ -155,7 +158,118 @@ std::unique_ptr<Cat>u_c_p4 = make_unique<Cat>();
 u_c_p4->set_cat_name("oo");
 u_c_p4->cat_info();
 
+/*常用方法*/
+//get方法：获得指针指向的地址
+std::unique_ptr<Cat> u_p1 = std::make_unique<Cat>();
+Cat* p2 = nullptr;
+p2 = u_p1.get(); // p2也指向了Cat，u_p1并不释放
+//relase方法：
+p2 = u_p1.release(); // p2也指向了Cat，u_p1释放
+// reset方法；将智能指针指向0，如果该智能指针为const，则不能调用这个方法
+u_p1.reset();// u_p1释放指向0：u_p1.get()为0
+
+/*传递方式*/
+//函数调用时 值传递 需要调用std::move()
+void pass_value(std::unique_ptr<Cat> p){
+    p->method();
+}
+std::unique_ptr<Cat> u_p1 = std::make_unique<Cat>();
+pass_value(std::move(u_p1));
+//函数调用时，引用传递，不需要move
+void pass_ref(std::unique_ptr<Cat>& p){
+    p->method();
+}
+std::unique_ptr<Cat> u_p1 = std::make_unique<Cat>();
+pass_value(u_p1);
 ```
+
+### shared_ptr：共享指针
+
+- 可以copy，shared_ptr创建一个计数器与类对象进行关联，copy则计数器的值+1，销毁则计数器的值-1，可以通过`use_count()`得到有多少个shared_ptr指向该对象；
+
+- 当计数器的值为0的时候才会调用析构
+
+- shared_ptr passed by value 计数+1，shared_ptr passed by ref 计数不改变
+
+- unique_ptr可以转换为shared_ptr 
+
+  ```cpp
+  std::unique_ptr<Cat> p1 = std::make_unique<Cat>(); 
+  std::shared_ptr<Cat> p2 = std::move(p1);
+  ```
+
+
+
+### weak_ptr：配合shared_ptr
+
+-  weak_ptr没有所有权，不能调用 `->` 和 `*`
+- 可以调用 use_count 但是 计数器并不会＋1
+- 可以通过 `.lock()`将 weak_ptr 类型转换为 shared_ptr
+- 用于解决循环依赖问题： 
+
+```cpp
+#include "utils.hpp"
+class Cat {
+ private:
+  std::string m_name = "hhh";
+  std::weak_ptr<Cat> m_friend;
+
+ public:
+  Cat() { std::cout << "Constructor: " << this->m_name << std::endl; }
+  Cat(std::string name) {
+    this->m_name = name;
+    std::cout << "Constructor: " << this->m_name << std::endl;
+  }
+  Cat(Cat& c) {
+    this->m_name = c.m_name;
+    this->m_friend = c.m_friend;
+    std::cout << "Constructor: " << this->m_name << std::endl;
+  }
+
+  ~Cat() { std::cout << "Deconstructor: " << this->m_name << std::endl; }
+  void set_friend(std::shared_ptr<Cat>& c) {
+    std::cout << c.use_count() << std::endl;
+    this->m_friend = c;
+  }
+};
+
+int main(int argc, char* agrv[]) {
+  std::shared_ptr<Cat> c1 = std::make_shared<Cat>("c1");
+  std::cout << c1.use_count() << std::endl;
+  std::shared_ptr<Cat> c2 = std::make_shared<Cat>("c2");
+  c1->set_friend(c2);
+  std::cout << c1.use_count() << std::endl;
+  c2->set_friend(c1);
+  return 0;
+}
+
+/*
+Constructor: c1
+1
+Constructor: c2
+1
+1
+1
+Deconstructor: c2
+Deconstructor: c1
+*/
+```
+
+
+
+## 野指针
+
+野指针（Dangling Pointer）是指在程序中存在的指向已经释放或者无效的内存地址的指针。当程序中的指针被释放或者指向的内存被回收后，如果没有将指针置为NULL或者重新指向有效的内存地址，那么这个指针就变成了野指针。
+
+使用野指针可能会导致严重的错误和未定义行为，因为它指向的内存地址可能已经被其他程序或者系统回收，这时对该地址进行读写操作会导致不可预测的行为，可能会导致程序崩溃或产生错误结果。
+
+野指针的出现通常有以下几种情况：
+
+1. 指针未初始化：当定义指针变量但未初始化时，该指针的值是不确定的，指向的地址可能是随机值，即野指针。
+2. 指针指向已释放的内存：在手动管理内存的情况下，如果释放了一块内存区域，但没有将指针置为NULL或者重新指向其他有效的内存，那么该指针就变成了野指针。
+3. 指针超出作用域：如果在函数内部定义的指针在函数返回后依然被使用，它就变成了野指针，因为函数退出后，其指向的内存已经无效。
+
+
 
 ## RAII
 
