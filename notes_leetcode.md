@@ -4919,6 +4919,8 @@ public:
 
 ### [子序列-最长递增子序列](https://leetcode.cn/problems/longest-increasing-subsequence/)
 
+给你一个整数数组 `nums` ，找到其中最长严格递增子序列的长度。
+
 **子序列**：在原序列中删除或保留某些位置的元素，元素间的相应位置不变。
 
 1. 确定dp数组（dp table）以及下标的含义
@@ -5771,6 +5773,114 @@ void heapSort(vector<int>& nums){
 }
 ```
 
+## 链表的归并排序
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+struct Node{
+  unsigned int time;
+  struct Node* next;  
+};
+/*
+单向链表
+按照time 升序排列 返回头节点
+*/
+void printNode(struct Node* head){
+  struct Node* cur = head;
+  while(cur){
+    printf("%d ", cur->time);
+    cur = cur->next;
+  }
+  printf("\n");
+}
+
+struct Node* split(struct Node* head){
+  struct Node* slow = head;
+  struct Node* fast = head->next;
+  while(fast->next != NULL && fast->next->next != NULL){
+    slow = slow->next;
+    fast = fast->next->next;
+  }
+  struct Node* ret = slow->next;
+  slow->next = NULL;
+  return ret;
+}
+
+struct Node* merge(struct Node* head1, struct Node* head2){
+  struct Node* dummy = (struct Node*) malloc(sizeof(struct Node));
+  dummy->next = NULL;
+  struct Node* ptr = dummy;
+  struct Node* ptr1 = head1;
+  struct Node* ptr2 = head2;
+  while(ptr1 && ptr2){
+    if(ptr1->time <= ptr2->time){
+      ptr->next = ptr1;
+      ptr = ptr->next;
+      ptr1 = ptr1->next;
+    }else{
+      ptr->next = ptr2;
+      ptr = ptr->next;
+      ptr2 = ptr2->next;      
+    }
+  }
+  while(ptr1){
+    ptr->next = ptr1;
+    ptr = ptr->next;
+    ptr1 = ptr1->next;
+  }
+  while(ptr2){
+    ptr->next = ptr2;
+    ptr = ptr->next;
+    ptr2 = ptr2->next; 
+  }
+  return dummy->next;
+}
+
+struct Node* sort(struct Node* head){
+  if(head==NULL || head->next == NULL){
+    return head;
+  }
+  
+  struct Node* head1 = head;
+  struct Node* head2 = split(head);
+
+  head1 = sort(head1);
+  head2 = sort(head2);
+
+  return merge(head1, head2);
+  
+}
+
+
+
+int main() {
+  struct Node* node_1 = (struct Node*) malloc(sizeof(struct Node));
+  node_1->time = 1000;
+  struct Node* node_2 = (struct Node*) malloc(sizeof(struct Node));
+  node_2->time = 500;
+  struct Node* node_3 = (struct Node*) malloc(sizeof(struct Node));
+  node_3->time = 9000;
+  struct Node* node_4 = (struct Node*) malloc(sizeof(struct Node));
+  node_4->time = 400;
+
+  node_1->next = node_2;
+  node_2->next = node_3;
+  node_3->next = node_4;
+  node_4->next = NULL;
+
+  printNode(node_1);
+
+  struct Node* res = sort(node_1);
+
+  printNode(res);
+
+  return 0;
+}
+```
+
+
+
 ## 例题：
 
 [剑指 Offer II 076. 数组中的第 k 大的数字](https://leetcode.cn/problems/xx4gT2/description/)
@@ -5779,7 +5889,47 @@ void heapSort(vector<int>& nums){
 
 # 图的遍历
 
+## 图的建立
+
+树是一种特殊的图。图可以分为有向图（单向图）和无向图（双向图），其表示方法一般是邻接表和邻接矩阵。树也是一种特殊的图，因此其实树也是可以用邻接表来表示的。需要自己建图一般都是在竞赛或笔试的时候，题目一般会告知如下的信息。
+
+> 输入第一行为一个整数 *n* ，表示模块总数。
+>
+> 接下来的 *n* 行依次表示模块 1 到*n* 的依赖关系。
+>
+> 输入每行的第一个数为一个整数 *m* ，表示依赖的模块数量(不会超过 *n* )，之后的数字表示当前模块依赖的模块ID序列，该序列不会重复出现相同的数字，并且模块ID的取值一定在[1,*n*] 之内。
+>
+> ```none
+> 5
+> 3 2 3 4 // 模块1依赖3个模块，分别依赖2、3、4。
+> 1 5 	// 模块2依赖1个模块，分别依赖5。
+> 1 5 	// 模块3依赖1个模块，分别依赖5。
+> 1 5 	// 模块4依赖1个模块，分别依赖5。
+> 0   	// 模块5依赖0个模块
+> ```
+
+搞清楚图的指向之后就可以建图了，邻接表可以用vector来确定，建图遵循的标准是`graph[from].push_back(to)`
+
+```cpp
+int N;
+cin >> N;
+vector<vector<int>> graph(N);
+for(int i = 0;i < N;i++){
+	int n;
+    cin >> n;
+    for(int j = 0;j < n;j++){
+        int from = 0;
+        cin >> from;
+        graph[from-1].push_back(i);
+    }
+}
+```
+
+建图关键是弄清楚边的指向。
+
 ## DFS
+
+图的dfs主要是处理和路径有关的题目，比如检测是否有环，最大路径和这种。
 
 ```cpp
 class Solution {
@@ -5822,7 +5972,45 @@ public:
 
 ## BFS
 
-```
+图的BFS 是层序遍历，使用场景是 拓扑排序，确定层数 这一类的题目。
 
+自顶向下遍历用入度
+
+自底向上遍历用出度
+
+```cpp
+// 根据graph得到每个节点的入度 indegree
+vector<int> indegree(graph.size());
+for(auto p:graph){
+    for(auto to:p){
+        indegree[to]++;
+    }
+}
+
+// 根据入度 找到 可以可能的初始节点
+queue<int> que;
+for(int i = 0;i < indregree.size();i++){
+    if(indregree[i] == 0){
+        que.push(i);
+    }
+}
+vector<int> path; // 确定路径，也是拓扑排序的结果
+int count = 0; // 层数
+
+while(!que.empty()){
+    int size = que.size();
+    for(int i = 0;i < size;i++){
+        int cur = que.front();
+    	que.pop();
+        path.push_back(cur);
+        for(auto child:graph[cur]){
+            indegree[child]--;
+            if(indegree[child] == 0){
+                que.push(child);
+            }
+        } 
+    }
+    ++count;
+}
 ```
 
